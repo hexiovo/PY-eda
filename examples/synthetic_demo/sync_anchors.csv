@@ -1,0 +1,9 @@
+﻿recording_id,anchor_id,local_time_s,reference_time_s,clock_domain
+synthetic_001,a0,0,0,recording_local
+synthetic_001,a600,600,600,recording_local
+synthetic_002,a0,0,0,recording_local
+synthetic_002,a600,600,600,recording_local
+synthetic_003,a0,0,0,recording_local
+synthetic_003,a600,600,600,recording_local
+synthetic_004,a0,0,0,recording_local
+synthetic_004,a600,600,600,recording_local

@@ -1,0 +1,3 @@
+﻿recording_id,anchor_id,local_time_s,reference_time_s,channel,clock_domain,reference_clock_domain,uncertainty_s,quality
+SYNTHETIC_REC_001,SYNTHETIC_ANCHOR_001,0.00,10.00,EDA,recording_local,shared_reference,0.01,synthetic
+SYNTHETIC_REC_001,SYNTHETIC_ANCHOR_002,2.00,12.00,EDA,recording_local,shared_reference,0.01,synthetic

@@ -1,0 +1,34 @@
+# Project-local Python environment
+.venv/
+
+# Python bytecode and local caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Build and packaging outputs
+build/
+dist/
+*.egg-info/
+
+# Local editor and OS metadata
+.idea/
+.vscode/
+Thumbs.db
+Desktop.ini
+
+# Local runs and verification evidence (may include imported records)
+artifacts/
+.property-tests/
+examples/**/results/
+*.sqlite
+*.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+.env
+.env.*
+!.env.example

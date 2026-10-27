@@ -1,0 +1,49 @@
+{
+  "updated_at_utc": "2026-10-25T09:20:52.338993+00:00",
+  "scope": "actual current living registers; separate from initial P00 historical snapshot",
+  "files": {
+    "requirements.csv": {
+      "rows": 209,
+      "sha256": "4bfcd3f8d9b0c9626217cbd8e05e81ea4cfac42bb43ac3ee9c4380fd0cdf561e",
+      "priority_by_implementation_status": {
+        "mandatory / scope_recorded": 1,
+        "mandatory / partial_baseline": 1,
+        "mandatory / focused_tests_passed_partial": 3,
+        "mandatory / source_27_actions_verified_frozen_gui_smoke_verified": 28,
+        "mandatory / focused_qc_tests_passed_partial": 1,
+        "mandatory / implemented_unverified": 6,
+        "mandatory / synthetic_pipeline_partial": 1,
+        "mandatory / synthetic_pipeline_and_focused_regressions_partial": 32,
+        "mandatory / synthetic_group_sync_partial": 8,
+        "mandatory / synthetic_group_synchrony_partial_experimental": 16,
+        "mandatory / focused_null_regressions_partial_experimental": 6,
+        "mandatory / focused_regressions_passed_partial": 11,
+        "mandatory / synthetic_export_and_pdf_partial": 9,
+        "mandatory / implemented_cli_pipeline_smoke_partial": 17,
+        "mandatory / gui_smoke_partial": 10,
+        "mandatory / focused_lifecycle_regressions_passed_partial": 6,
+        "mandatory / serial_parallel_single_fixture_partial": 1,
+        "mandatory / documentation_artifacts_built_partial": 1,
+        "mandatory / documentation_visual_qa_passed_partial": 12,
+        "mandatory / frozen_engineering_candidate_verified_qualification_open": 7,
+        "mandatory / conditionally_disabled": 4,
+        "conditional / synthetic_pipeline_and_focused_regressions_partial": 2,
+        "deferred / synthetic_pipeline_and_focused_regressions_partial": 3,
+        "conditional / focused_null_regressions_partial_experimental": 3,
+        "mandatory / not_verified_external_environment": 1,
+        "mandatory / actual_artifact_inventory_generated_distribution_review_pending": 1,
+        "deferred / conditionally_disabled": 3,
+        "mandatory / not_assessed": 15
+      },
+      "mandatory_without_evidence_path": []
+    },
+    "method_evidence.csv": {
+      "rows": 35,
+      "sha256": "abcbd30f01194ad77e6c2a5f6373e90a6ae56a78315e7311419e86b098790818"
+    },
+    "license_inventory.csv": {
+      "rows": 66,
+      "sha256": "078f67bcfb5377d0e9a8d05b086569d22eb198f2e11f569fcf915a03dd9ca120"
+    }
+  }
+}

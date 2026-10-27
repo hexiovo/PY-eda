@@ -1,0 +1,2 @@
+﻿recording_id,interval_id,start_s,end_s,condition,channel,clock_domain
+SYNTHETIC_REC_001,SYNTHETIC_INTERVAL_001,0.00,2.00,SYNTHETIC_CONDITION_A,EDA,recording_local

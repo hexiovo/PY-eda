@@ -1,0 +1,162 @@
+{
+  "schema_version": "1.0",
+  "pipeline_id": "single_standard",
+  "preset_version": "1.0",
+  "input": {
+    "manifest": "input_manifest.csv",
+    "signals": [],
+    "participants": "participants.csv",
+    "events": "events.csv",
+    "conditions": "conditions.csv",
+    "group_membership": null,
+    "sync_anchors": null,
+    "manual_qc": null,
+    "statistical_design": null,
+    "encoding": "utf-8-sig",
+    "delimiter": ",",
+    "missing_tokens": [
+      "",
+      "NA",
+      "NaN"
+    ],
+    "base_directory": "examples/current_synthetic_demo"
+  },
+  "mapping": {
+    "columns": {},
+    "constants": {},
+    "eda_unit": "uS",
+    "sampling_rate_hz": 4,
+    "time_unit": "s",
+    "clock_domain": "recording_local"
+  },
+  "qc": {
+    "min_uS": null,
+    "max_uS": null,
+    "max_slope_uS_s": null,
+    "max_jump_uS": null,
+    "flatline_duration_s": 5.0,
+    "flatline_tolerance_uS": 0.0,
+    "gap_factor": 1.5,
+    "exclude_auto": true,
+    "annotations": []
+  },
+  "preprocess": {
+    "interpolate_max_gap_s": 0.0,
+    "interpolation": "linear",
+    "smoothing": "none",
+    "smoothing_window_s": 0.5,
+    "lowpass_hz": null,
+    "filter_order": 2,
+    "resample_hz": null,
+    "baseline": null,
+    "scaling": "none",
+    "edge_tolerance": 0.001,
+    "min_segment_duration_s": 0.0,
+    "jitter_tolerance": 0.01
+  },
+  "decomposition": {
+    "method": "filter_separation",
+    "cutoff_hz": 0.05,
+    "order": 2,
+    "edge_tolerance": 0.001
+  },
+  "scr": {
+    "method": "trough_to_peak",
+    "signal_basis": "phasic",
+    "threshold_type": "absolute",
+    "amplitude_min_uS": 0.05,
+    "relative_fraction": 0.1,
+    "reference_scope": "recording",
+    "min_rise_s": 0.0,
+    "max_rise_s": 10.0,
+    "min_interval_s": 1.0,
+    "recovery_fraction_returned": 0.5,
+    "onset_left_context_s": 0.0,
+    "onset_right_context_s": 10.0
+  },
+  "windows": {
+    "whole_record": true,
+    "fixed_length_s": 30.0,
+    "fixed_step_s": 30.0,
+    "tail_policy": "drop",
+    "event_baseline_s": [
+      -2.0,
+      0.0
+    ],
+    "event_response_s": [
+      1.0,
+      4.0
+    ],
+    "event_peak_s": [
+      1.0,
+      10.0
+    ],
+    "event_recovery_s": [
+      1.0,
+      20.0
+    ],
+    "min_coverage": 0.8
+  },
+  "features": {
+    "ids": [],
+    "exclude_interpolated": true
+  },
+  "synchrony": {
+    "enabled": false,
+    "basis": "phasic",
+    "metric": "pearson",
+    "window_s": 30.0,
+    "step_s": 30.0,
+    "max_lag_s": 5.0,
+    "lag_step_s": 1.0,
+    "min_coverage": 0.8,
+    "min_samples": 8,
+    "analysis_rate_hz": 4.0,
+    "timing_tolerance_s": 0.1,
+    "allow_provisional": false,
+    "shared_clock_verified": false,
+    "standardize": true,
+    "null_method": "circular_shift",
+    "null_replicates": 99,
+    "min_shift_s": 10.0,
+    "max_attempts": 10000,
+    "tail": "two-sided",
+    "seed": 2026,
+    "pseudodyad_strata": [],
+    "matching_fields": [],
+    "analysis_intervals_s": null,
+    "analysis_context_s": 0.0,
+    "pseudodyad_exchangeability": false
+  },
+  "statistics": {
+    "enabled": false,
+    "designs": [],
+    "alpha": 0.05,
+    "correction": "holm",
+    "missing_policy": "complete_case",
+    "planned_hypotheses": []
+  },
+  "compute": {
+    "backend": "cpu",
+    "workers": 1,
+    "seed": 2026,
+    "memory_limit_mb": 2048,
+    "max_pairs": 10000,
+    "max_windows": 10000,
+    "max_null_evaluations": 10000000
+  },
+  "output": {
+    "directory": "examples/current_synthetic_demo/results",
+    "overwrite": false,
+    "formats": [
+      "csv",
+      "json",
+      "html",
+      "png",
+      "xlsx"
+    ],
+    "spreadsheet_safe": true,
+    "redact_paths": true,
+    "save_processed_signals": true
+  }
+}

@@ -1,0 +1,2 @@
+﻿design_id,outcome,design_type,independent_unit,subject_id_column,group_column,session_id_column,condition_column,covariates,contrast,correction_family
+SYNTHETIC_DESIGN_001,mean,paired,subject,subject_id,experimental_group,session_id,condition,[],"{""conditions"":[""SYNTHETIC_CONDITION_A"",""SYNTHETIC_CONDITION_B""]}",SYNTHETIC_FAMILY_001

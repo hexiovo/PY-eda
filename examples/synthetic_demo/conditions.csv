@@ -1,0 +1,5 @@
+﻿recording_id,interval_id,start_s,end_s,condition,clock_domain
+synthetic_001,demo_interval,0,600,demo,recording_local
+synthetic_002,demo_interval,0,600,demo,recording_local
+synthetic_003,demo_interval,0,600,demo,recording_local
+synthetic_004,demo_interval,0,600,demo,recording_local

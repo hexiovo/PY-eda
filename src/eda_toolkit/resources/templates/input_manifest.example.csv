@@ -1,0 +1,2 @@
+﻿file_path,recording_id,subject_id,session_id,sampling_rate_hz,eda_unit,mapping_profile,channel,clock_domain,time_origin,time_unit
+SYNTHETIC_ONLY/recording.csv,SYNTHETIC_REC_001,SYNTHETIC_SUBJECT_001,SYNTHETIC_SESSION_001,100,uS,standard,EDA,recording_local,0,s

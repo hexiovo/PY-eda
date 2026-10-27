@@ -1,0 +1,2 @@
+﻿annotation_id,recording_id,channel,start_s,end_s,action,reason,operator,timestamp,revision,parent_revision,target_annotation_id,clock_domain
+SYNTHETIC_ANNOTATION_001,SYNTHETIC_REC_001,EDA,1.20,1.40,exclude,synthetic example only,SYNTHETIC_REVIEWER,2026-01-01T00:00:00+00:00,1,0,,recording_local

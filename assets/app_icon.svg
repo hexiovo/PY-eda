@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Electrodermal analysis signal icon">
+  <defs>
+    <radialGradient id="backdrop" cx="46%" cy="35%" r="80%">
+      <stop offset="0" stop-color="#1b3552"/>
+      <stop offset="1" stop-color="#0F172A"/>
+    </radialGradient>
+    <linearGradient id="signal" x1="72" y1="0" x2="438" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0284C7"/>
+      <stop offset="0.55" stop-color="#0EA5E9"/>
+      <stop offset="1" stop-color="#22D3EE"/>
+    </linearGradient>
+    <linearGradient id="signalArea" x1="0" y1="180" x2="0" y2="390" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0EA5E9" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#0EA5E9" stop-opacity="0.015"/>
+    </linearGradient>
+    <filter id="softGlow" x="-20%" y="-40%" width="140%" height="180%">
+      <feGaussianBlur stdDeviation="11"/>
+    </filter>
+    <pattern id="grid" width="96" height="96" patternUnits="userSpaceOnUse">
+      <path d="M 96 0 H 0 V 96" fill="none" stroke="#7DD3FC" stroke-opacity="0.075" stroke-width="1.5"/>
+    </pattern>
+    <clipPath id="tileClip">
+      <rect x="16" y="16" width="480" height="480" rx="112"/>
+    </clipPath>
+  </defs>
+
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="url(#backdrop)"/>
+  <g clip-path="url(#tileClip)">
+    <rect x="16" y="16" width="480" height="480" fill="url(#grid)"/>
+    <path d="M 72 346 C 128 346, 155 346, 178 338 C 198 331, 211 300, 225 252 C 236 212, 243 182, 264 180 C 286 178, 300 203, 314 234 C 329 267, 338 303, 356 325 C 375 345, 402 346, 440 342 L 440 394 L 72 394 Z" fill="url(#signalArea)"/>
+    <path d="M 72 346 C 128 346, 155 346, 178 338 C 198 331, 211 300, 225 252 C 236 212, 243 182, 264 180 C 286 178, 300 203, 314 234 C 329 267, 338 303, 356 325 C 375 345, 402 346, 440 342" fill="none" stroke="#22D3EE" stroke-opacity="0.38" stroke-width="38" stroke-linecap="round" stroke-linejoin="round" filter="url(#softGlow)"/>
+    <path d="M 72 346 C 128 346, 155 346, 178 338 C 198 331, 211 300, 225 252 C 236 212, 243 182, 264 180 C 286 178, 300 203, 314 234 C 329 267, 338 303, 356 325 C 375 345, 402 346, 440 342" fill="none" stroke="url(#signal)" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="264" cy="180" r="18" fill="#0F172A" stroke="#A5F3FC" stroke-width="8"/>
+    <circle cx="264" cy="180" r="8" fill="#ECFEFF"/>
+  </g>
+  <rect x="18" y="18" width="476" height="476" rx="110" fill="none" stroke="#7DD3FC" stroke-opacity="0.18" stroke-width="2"/>
+</svg>
+
+
+

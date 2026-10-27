@@ -1,0 +1,106 @@
+{
+  "schema_version": "1.0",
+  "name": "sync_anchors",
+  "display_name": "同步锚点",
+  "description": "用独立时钟事件估计映射；不以 EDA 相似度寻找对齐。",
+  "fields": [
+    {
+      "name": "recording_id",
+      "type": "string",
+      "unit": "none",
+      "required": true,
+      "missing": "forbidden",
+      "foreign_key": "signals.recording_id",
+      "clock": null,
+      "description": ""
+    },
+    {
+      "name": "anchor_id",
+      "type": "string",
+      "unit": "none",
+      "required": true,
+      "missing": "forbidden",
+      "foreign_key": null,
+      "clock": null,
+      "description": ""
+    },
+    {
+      "name": "local_time_s",
+      "type": "number",
+      "unit": "s",
+      "required": true,
+      "missing": "forbidden",
+      "foreign_key": null,
+      "clock": "clock_domain",
+      "description": ""
+    },
+    {
+      "name": "reference_time_s",
+      "type": "number",
+      "unit": "s",
+      "required": true,
+      "missing": "forbidden",
+      "foreign_key": null,
+      "clock": "reference_clock_domain",
+      "description": ""
+    },
+    {
+      "name": "channel",
+      "type": "string",
+      "unit": "none",
+      "required": false,
+      "missing": "allowed",
+      "foreign_key": null,
+      "clock": null,
+      "description": ""
+    },
+    {
+      "name": "clock_domain",
+      "type": "string",
+      "unit": "none",
+      "required": true,
+      "missing": "forbidden",
+      "foreign_key": null,
+      "clock": null,
+      "description": "锚点所在记录本地时钟。"
+    },
+    {
+      "name": "reference_clock_domain",
+      "type": "string",
+      "unit": "none",
+      "required": true,
+      "missing": "forbidden",
+      "foreign_key": null,
+      "clock": null,
+      "description": "对齐目标时钟；必须明确声明。"
+    },
+    {
+      "name": "uncertainty_s",
+      "type": "number",
+      "unit": "s",
+      "required": false,
+      "missing": "allowed",
+      "foreign_key": null,
+      "clock": null,
+      "description": "锚点时间不确定度。"
+    },
+    {
+      "name": "quality",
+      "type": "string",
+      "unit": "none",
+      "required": false,
+      "missing": "allowed",
+      "foreign_key": null,
+      "clock": null,
+      "description": "锚点质量或来源。"
+    }
+  ],
+  "unique": [
+    [
+      "recording_id",
+      "anchor_id",
+      "channel"
+    ]
+  ],
+  "example_label": "SYNTHETIC_ONLY"
+}

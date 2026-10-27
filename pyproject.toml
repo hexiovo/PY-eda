@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=75", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "eda-toolkit"
+version = "0.3.0"
+description = "用于皮肤电活动数据工作的本地工具包（开发中）"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=2.0",
+    "scipy>=1.14",
+    "pandas>=2.2",
+    "PySide6>=6.8",
+    "matplotlib>=3.9",
+    "openpyxl>=3.1",
+    "reportlab>=4.2",
+    "statsmodels>=0.14.4",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.3"]
+build = ["pyinstaller>=6.12"]
+
+[project.scripts]
+eda-toolkit = "eda_toolkit.__main__:main"
+eda-cli = "eda_toolkit.cli:main"
+
+[project.gui-scripts]
+eda-gui = "eda_toolkit.ui.app:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["eda_toolkit*"]
+
+[tool.setuptools.package-data]
+eda_toolkit = ["resources/**/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"

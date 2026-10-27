@@ -1,0 +1,5 @@
+﻿group_id,session_id,subject_id,recording_id,role,member_slot,task_id,stimulus_timeline_id,task_time_origin_s
+G1,demo,001,synthetic_001,A,A,synthetic_task,synthetic_identical_onsets,0.0
+G1,demo,002,synthetic_002,B,B,synthetic_task,synthetic_identical_onsets,0.0
+G2,demo,003,synthetic_003,A,A,synthetic_task,synthetic_identical_onsets,0.0
+G2,demo,004,synthetic_004,B,B,synthetic_task,synthetic_identical_onsets,0.0

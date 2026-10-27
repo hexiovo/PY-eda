@@ -1,0 +1,80 @@
+{
+  "schema_version": "1.0",
+  "name": "signals",
+  "display_name": "信号",
+  "description": "长表，每行是一条采样值；原始时间顺序必须保持不变。",
+  "fields": [
+    {
+      "name": "recording_id",
+      "type": "string",
+      "unit": "none",
+      "required": true,
+      "missing": "forbidden",
+      "foreign_key": null,
+      "clock": null,
+      "description": "记录标识；可由清单/常量补齐。"
+    },
+    {
+      "name": "subject_id",
+      "type": "string",
+      "unit": "none",
+      "required": false,
+      "missing": "allowed",
+      "foreign_key": "participants.subject_id",
+      "clock": null,
+      "description": "被试标识；可由清单补齐。"
+    },
+    {
+      "name": "session_id",
+      "type": "string",
+      "unit": "none",
+      "required": false,
+      "missing": "allowed",
+      "foreign_key": null,
+      "clock": null,
+      "description": "会话标识；可由清单补齐。"
+    },
+    {
+      "name": "channel",
+      "type": "string",
+      "unit": "none",
+      "required": false,
+      "missing": "allowed",
+      "foreign_key": null,
+      "clock": null,
+      "description": "通道；多通道文件须显式标识或按清单筛选。"
+    },
+    {
+      "name": "time_s",
+      "type": "number",
+      "unit": "s",
+      "required": false,
+      "missing": "allowed",
+      "foreign_key": null,
+      "clock": "clock_domain",
+      "description": "来源时间；若不存在，清单必须给出采样率和时间单位。"
+    },
+    {
+      "name": "eda_uS",
+      "type": "number",
+      "unit": "uS",
+      "required": true,
+      "missing": "allowed",
+      "foreign_key": null,
+      "clock": null,
+      "description": "物理电导；标准列名声明 uS，NaN保留。"
+    },
+    {
+      "name": "clock_domain",
+      "type": "string",
+      "unit": "none",
+      "required": false,
+      "missing": "allowed",
+      "foreign_key": null,
+      "clock": null,
+      "description": "本地时间坐标的时钟域。"
+    }
+  ],
+  "unique": [],
+  "example_label": "SYNTHETIC_ONLY"
+}

@@ -1,0 +1,5 @@
+﻿group_id,session_id,subject_id,recording_id,role
+G1,demo,001,synthetic_001,A
+G1,demo,002,synthetic_002,B
+G2,demo,003,synthetic_003,A
+G2,demo,004,synthetic_004,B

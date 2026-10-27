@@ -1,0 +1,356 @@
+EDA ANALYSIS SOFTWARE — MODULE IMPLEMENTATION DESIGNS
+Baseline: 2026-10-25 | Revision: 1.1 | Reviewed design for Codex implementation; no functionality implemented
+
+READING CONVENTIONS
+
+M01–M16 are implementation work packages, not sixteen independent applications. All use the shared contracts below. Proposed source paths describe future work and are not files delivered here. Each package defines responsibility, input/output, approach, dependencies, failure behavior and acceptance evidence. Exact scientific parameters remain configurable and require pilot qualification.
+
+Method readiness vocabulary:
+  proposed → evidence_reviewed → engineering_validated → scientifically_qualified.
+  blocked_license, unavailable_dependency and experimental are additional explicit states.
+A method may be engineering validated for some rates/workloads while remaining scientifically unqualified for another device/task. Capability records must express that scope rather than a single universal “supported” flag.
+
+M01. CONTRACTS, CONFIGURATION AND PIPELINE CONTROL
+Future paths: contracts/, config/, pipeline/. Phases: P01, P09.
+
+Responsibility: define common data, execution and status semantics before module implementation. Route selected stages through one public run_pipeline(config, input_manifest, progress_callback, cancel_callback) entry point. Callbacks are optional boundary functions; numerical kernels do not know Qt.
+
+Core contracts, implemented with tables, arrays and ordinary dictionaries:
+  RecordingMetadata: recording_id, subject_id, session_id, channel, device_id, source paths/hashes, declared units, time coordinate, rate estimate/declared rate, mapping revision.
+  Samples: sample_index_original, time_s, eda_uS, optional timestamp_utc and auxiliary columns. Arrays are float64 unless a method explicitly qualifies another type.
+  QualityFacts: original_missing, nonfinite, auto_candidate, manual_exclude, manual_restore, interpolated, edge_affected, time_untrusted; interval reasons and annotation revision accompany sample facts.
+  SignalBundle: time, raw/clean/tonic/phasic, optional driver, residual, basis/unit/transform metadata for every provided component.
+  WindowTable: stable window_id, record/group/session, kind, start/end, event/condition association, configured policy and validity summary.
+  FeatureTable: run/subject/session/record/window, feature_id, value, unit, basis, method/version, status/reason, valid exposure and transform metadata.
+  RunSummary: run_id, resolved-plan hash, terminal status, record/stage statuses, artifact manifest, exclusions, warnings and timing.
+
+Error contract: category, code, stage, record_id, field/location, human message, remediation and restricted diagnostic details. Categories include input/configuration, missing dependency, numerical/nonconvergence, resource/I/O and cancellation. Successful empty SCR results are not errors. No “except all, return zeros” handling.
+
+Statuses: planned, running, succeeded, partial, failed, cancelled, skipped and not_applicable. A batch with failed items is partial even when other outputs are valid. A cancelled run retains its cancellation state and completed-item list. Record and stage status are stored separately.
+
+Configuration: schema_version, pipeline_id, input, mapping, qc, preprocess, decomposition, scr, windows, features, synchrony, statistics, compute, output. Each component has versioned schemas, enumerated methods and cross-field validators. Unknown fields are errors by default; any future extension namespace must be explicit and must not be dropped. Defaults resolve into a complete configuration before execution. Separate schema version, preset version and algorithm version.
+
+Execution: validate → resolve explicit defaults → inspect capabilities → calculate stage graph and workload → snapshot resolved plan → run stages → commit stage outputs → finalize manifest. A selected method that lacks a dependency blocks that plan, with an actionable message. It is not silently replaced by another method.
+
+[RV09] Freeze the complete input set, resolved config and annotation revision for a run. Prefer a project-controlled immutable snapshot when acceptable, or hash the exact stream consumed and detect changes during reading; a preflight hash alone is insufficient. Abort affected work on detected input mutation. Give each run a unique reserved directory and a single writer; parallel workers return artifacts through the controller. Detect stale locks and conflicting annotation revisions rather than overwriting them. Live GUI edits belong to a new draft/run and never mutate active worker inputs.
+
+Cache key: input content + identity/time/mapping metadata + resolved relevant config + annotation revision + upstream artifact hashes + algorithm/adapter version + applicable numerical environment. Content hashes alone cannot detect changed event tables or manual QC. Reuse only completed, checksum-valid compatible stages. New config changes preserve the earlier run.
+
+Cancellation: cooperative checks between records, valid segments and surrogate batches. A long uninterruptible solver finishes or uses an explicitly qualified termination policy; show “cancellation requested” meanwhile. Write files to temporary names, atomically commit completed artifacts, then mark stage completion. Never reuse uncommitted intermediate files. Separate retryable record failures from global invalid configuration.
+
+[RV11] Track dependency completeness separately from individual file success. If a required group member/condition fails, do not silently recompute the planned group/statistical result on the survivors. Keep independent completed outputs, mark dependent inference unavailable, and label any permitted partial descriptive summary with its actual composition. A reduced-cohort rerun needs an explicit new resolved design. Publish each completed stage with a manifest after all its files are committed; per-file atomic rename is not a transaction for an entire run. On restart, verify manifests/checksums instead of treating file existence as completion.
+
+[RV10] Strict JSON rejects duplicate keys and nonstandard NaN/Infinity tokens. Export unavailable numeric values as null with status/reason; do not serialize nonfinite literals. Define canonical configuration serialization for hashing, while retaining the human-readable source configuration. These are explicit parser settings, not assumptions about Python defaults. [Python JSON behavior](https://docs.python.org/3/library/json.html)
+
+Acceptance: schema round-trip, invalid combinations, optional dependency absence, deterministic plan resolution, cache invalidation after annotation/event changes, mid-export failure and cancellation/resume tests. Core import succeeds without Qt; progress callback errors cannot corrupt numerical outputs.
+
+M02. CSV IMPORT, MAPPING AND NINE TEMPLATE TYPES
+Future paths: core_io/, templates/. Phases: P01, P02.
+
+Inputs: CSV paths, declared encoding/delimiter, mapping profile, optional manifest metadata. Outputs: normalized samples/metadata, associated tables, import report and mapping revision; original files remain untouched.
+
+Template contracts, proposed beyond the source where necessary:
+  signals: recording_id/channel + time_s + eda_uS; subject/session can be supplied by manifest.
+  participants: subject_id unique; optional experimental_group, age, sex and declared covariates. Map source “group” explicitly to experimental_group.
+  events: recording_id, event_id, onset_s, duration_s, event_type, condition; channel/broadcast scope is explicit for multichannel records.
+  conditions: recording_id, interval_id, start_s, end_s, condition; overlapping intervals require a declared interpretation.
+  input_manifest: file_path, recording_id, subject_id, session_id, sampling_rate_hz, eda_unit, mapping_profile; add channel selection and source time coordinate as needed.
+  group_membership: group_id, session_id, subject_id, recording_id, optional role/channel. group_id represents a social/interaction group, not an experimental arm.
+  sync_anchors: recording_id, anchor_id, local_time_s, reference_time_s; optional channel/clock_domain, uncertainty and anchor quality. Shared-device clocks can reference a common clock mapping.
+  manual_qc: annotation_id, recording_id, optional channel, start_s, end_s, action, reason, operator, timestamp, revision/parent_revision. This is a proposed audit schema.
+  statistical_design: design_id, outcome, design_type, independent_unit, subject/group/session/condition fields, covariates, contrast and correction_family. Store complex validated contrast structures in referenced JSON instead of executable CSV formulas.
+
+Each template has a minimal filled example, field dictionary, type/unit, required rule, allowed values, missing rule, foreign-key rules and time coordinate. Example subjects must be marked synthetic. All nine template categories get GUI view/download/import controls, even when optional for the selected workflow.
+
+Import procedure: bounded preview → confirm delimiter/encoding → map columns/constants → parse typed data → validate units/time/identities → validate table relationships → display diagnostics → accept normalized derivatives. Automatic column suggestions require review for ambiguous fields. Conflicting mapped columns/constants block acceptance. Preserve extra columns as uninterpreted data unless a design explicitly uses them.
+
+Time absent: require a user-declared rate; generate time while recording that it is derived and cannot reveal missing device samples without supporting sequence metadata. Time present: inspect robust dt summaries and sampling jitter; distinguish a rate estimate from a declared acquisition rate. Duplicate/backward timestamps prompt a recorded correction/splitting decision. Missing times remain excluded until an explicitly defensible reconstruction exists.
+
+[RV01] Preserve full-precision source timestamps and timezone metadata; subtract a declared origin before converting to floating-point relative seconds. Signal, event, condition, annotation and anchor tables must all identify their clock domain. An event timestamp from a separate device requires its own mapping; shared units of seconds do not imply a shared origin or clock.
+
+Conductance conversion: S × 10^6 → µS; mS × 10^3 → µS. For positive resistance in ohms, conductance µS = 10^6/R_ohm; apply declared kilo/megaohm conversion first. Preserve conversion formula and source columns. Do not treat zeros or unknown units as valid resistance conversion inputs.
+
+Diagnostics identify file, row, column, offending value, severity and proposed remedy. Reject inconsistent foreign keys, duplicated conflicting participant metadata, nonfinite values and ambiguous record/channel references. Amplitude NA can be retained with quality facts; a required ID cannot be bypassed by NA.
+
+Acceptance: Chinese/space paths, UTF-8 BOM and other explicitly supported encodings, quoted delimiters/newlines, decimal parsing, leading-zero IDs, malformed CSV, unknown units, duplicate mappings, rate/time disagreement and missing associations. Normalized export/reimport preserves IDs, units, missingness and values.
+
+M03. QC, SEGMENTATION AND MANUAL REVIEW HISTORY
+Future paths: core_qc/, ui/qc. Phases: P03, P10.
+
+Inputs: normalized samples, device/record metadata, QC policy and annotation revision. Outputs: sample quality facts, candidate/confirmed intervals, derived masks, continuous segments and QC summaries.
+
+Automatic candidates: missing/nonfinite values, implausible raw values against device-specific limits, flatline duration with a noise tolerance, amplitude jumps/derivative limits using actual dt, clipping/saturation and timing irregularity. Optional accelerometer and temperature provide auxiliary evidence only; absent channels mean “not assessed.” Document exact rolling windows, boundary expansion and threshold units. No universal normal conductance interval is imposed.
+
+Precedence: original missingness and untrusted time cannot be made observed by manual restore. Manual exclusion always excludes. A justified restore can override an automatic candidate for a method policy while retaining the original candidate and reason. “Suspicious” remains distinct from “confirmed invalid.” Interpolation never removes original-missing provenance. Derive final eligibility through a versioned policy rather than a single destructive good/bad column.
+
+Use [start,end) intervals in normalized recording time; retain source coordinate links. QC edits append action records with operator, reason, time and parent revision. Undo/redo creates another revision; importing an old annotation set does not silently overwrite later review. Link feature/result views to the revision used for that run.
+
+Summaries include raw/usable/interpolated duration, missing and excluded proportions, longest gap, candidate counts by reason and manual decisions. Duration-based proportions are required for irregular time; do not equate row percentages to time coverage. Never delete bad samples and concatenate the remaining timeline.
+
+Acceptance: synthetic flatline, slope, step, clipping, isolated missing and long dropout cases; overlapping causes; manual restoration/exclusion; deterministic segmentation; revision reconstruction; original input hashes unchanged. Candidate thresholds need device/task pilot calibration before scientific qualification.
+
+M04. SEGMENT-AWARE PREPROCESSING
+Future path: core_preprocess/. Phase: P04.
+
+Inputs: time/signal, QC facts and explicit ordered operations. Outputs: cleaned arrays/time, propagated facts, transformed metadata and operation reports.
+
+Recommended order [RV01/RV02]: resolve analysis clock → assess timing and QC in that clock → establish segments/eligible short gaps → regularize/interpolate only within the permitted support → approved smoothing/low-pass and anti-aliased rate conversion → physical-conductance decomposition/SCR branch. Synchrony/statistical transforms are separate downstream branches. A method-internal transform, such as a specifically qualified decomposition normalization, records its full conversion contract. The plan records any alternative order; operations cannot move across stages silently.
+
+Short-gap interpolation: linear first; PCHIP optional. Require valid flanks and a duration/sample limit; do not extrapolate leading/trailing gaps. Record source gap and influence region. Interpolated values may be usable for filter continuity but excluded from primary feature/inference policy. A long gap splits computation.
+
+Filtering: design Butterworth in second-order sections; offline forward/backward processing validates positive fs and 0 < cutoff < fs/2, padding length, valid segment length and boundaries. Report single-pass order, two-pass execution, padding and edge policy. A short segment produces a named unavailable/skipped outcome, not an automatic causal filter replacement. [SciPy SOS filtering](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.sosfiltfilt.html)
+
+[RV03] Library padding length is only a computability condition. Also qualify minimum scientifically usable duration and edge-exclusion length for each cutoff/order/model kernel. Forward/backward magnitude response is the squared single-pass magnitude; distinguish the design cutoff from any requested final-response cutoff. Process eligible continuous segments with context, then extract analysis windows; do not independently filter every short/overlapping window and create fresh edge artefacts. Report if edge exclusions leave no usable interior. A context buffer never crosses a long gap or a protected train/qualification boundary. [SciPy filtering definition](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.filtfilt.html)
+
+Regularization is not arbitrary interpolation through missing runs. Evaluate jitter and clock discontinuities before placing data on a uniform grid. Polyphase conversion is a candidate for rational rate ratios; specify FIR, pad policy, target time origin and endpoint rounding. Arbitrary-rate conversion requires a documented filter/grid design. [SciPy polyphase resampling](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.resample_poly.html)
+
+Propagate invalidity through processing support: resampled samples whose contributing support intersects excluded data or uncertain edges receive influence flags. Because IIR influence has no finite exact support, define a conservative exclusion radius from validated settling/impulse-response error rather than claiming one-sample mask projection is exact. Test that gap-edge artefacts are not counted as SCR.
+
+Baseline/scaling: explicit reference interval, centering/scaling parameters and reversible unit metadata. Reject zero-variance z-scores, undefined reference windows and log of nonpositive values. A full-record within-person transform may be allowed for descriptive work, but training/test or condition comparisons must use the predefined estimation scope to avoid leakage.
+
+[RV02] Validate method × signal_basis × transform × threshold_unit before execution. Absolute µS thresholds require a physical conductance difference on a qualified basis; a z-score, range-scaled or log signal cannot use that threshold by label alone. Constant baseline subtraction preserves differences but changes absolute tonic level, which must retain its offset metadata. Log-domain decomposition is not converted into physical tonic/phasic by separately exponentiating components. Retain the physical branch even when transformed results are requested.
+
+Acceptance: known sinusoids/chirps and impulses, frequency response, alias attenuation, phase/amplitude error, 4 Hz/low-rate boundaries, noninteger rates, short segments, gap edge behavior, baseline arithmetic and no cross-gap bridging. Fix numeric tolerances before reference qualification.
+
+M05. TONIC/PHASIC DECOMPOSITION AND ALGORITHM ADAPTERS
+Future paths: core_decompose/, adapters/. Phase: P05.
+
+Interface: separate_tonic_phasic(signal, fs, config) → components, fit_report. Metadata includes method/version, input transform, basis/unit for each component, solver state, residual definition and boundary diagnostics.
+
+Base route: explicit filter-separation adapter using a fixed NeuroKit release or equivalent validated SciPy definition. Use the method name “filter separation.” Its independently filtered tonic/phasic outputs need not sum exactly to the input; always compute residual = input − tonic − phasic. Driver is absent. Defaults are resolved explicitly; a compatibility preset records upstream behavior rather than hiding it. [Official NeuroKit source](https://neuropsychology.github.io/NeuroKit/_modules/neurokit2/eda/eda_phasic.html)
+
+cvxEDA route: conditional on license, runtime and solver feasibility. Preserve tonic, phasic, driver, residual, objective/status and convergence diagnostics; an upstream adapter that cannot expose required diagnostics needs additional wrapper work or a declared unsupported output. Freeze implementation commit, solver, tolerances, kernel/time constants, spline spacing and penalties. A standardized input requires retained mean/scale: recover conductance phasic/residual by multiplying scale; tonic also restores the mean. Driver scaling/units depend on the model kernel and discretization and must be established separately.
+
+Ledalab CDA/DDA: extension contracts and comparison-data import/export first. Do not introduce a MATLAB dependency into the base release. Label externally generated comparison results and fixed implementation/version. A Python port is a separate algorithm-validation project; CDA continuous driver, DDA reconstructed responses and generic phasic peaks remain separate output domains.
+
+Readiness gates for every new method: original mathematics + implementation source + license inventory + full dependency closure + explicit output semantics + fixed-version reference comparison + missing/short/flat/boundary cases + workload limits. No downloading executable plugins or evaluating arbitrary code through JSON.
+
+Failure: dependency missing, insufficient segment, infeasible/nonconverged solver, nonfinite output or residual failure remain explicit. Do not silently use highpass after selected cvxEDA fails.
+
+Acceptance: reference-vector differences, residual/reconstruction diagnostics, standardized-unit round-trip, driver availability and solver failure cases. Reconstruction fit is not evidence of true latent sudomotor activity.
+
+M06. SCR DETECTION, RECOVERY AND EVENT ATTRIBUTION
+Future paths: core_features/scr*, adapters/. Phase: P05, P06.
+
+Inputs: selected signal basis, fs/time, eligibility facts, threshold policy and event definitions. Outputs: stable SCR event table and detection report.
+
+Base method: specified trough-to-peak detection on an explicitly named cleaned/phasic signal. Resolve local onset/trough, peak candidates, prominence/amplitude rule, minimum rise duration, inter-response interval, ties and overlap policy in the method specification. Durations use seconds and documented sample rounding. Unit-qualified absolute thresholds, relative-to-record-maximum thresholds and onset-relative FA thresholds are different types with different fields.
+
+[RV05] A relative threshold needs reference_scope (segment, recording, or a predefined calibration interval), reference_basis, eligibility rule and the actual resolved numeric threshold. Do not allow changing gap segmentation or window size to silently change the denominator of “relative maximum.” A recording-level reference requires candidate collection across eligible segments before applying its threshold, without bridging those segments. Event/windows reuse the same physical SCR catalogue unless a separately named event detector is selected.
+
+The displayed NeuroKit default peak route applies a relative height criterion. Do not label its amplitude_min value as an absolute µS threshold. Keep optional upstream compatibility routes separate from the primary absolute-threshold contract. [Official peak source](https://neuropsychology.github.io/NeuroKit/_modules/neurokit2/eda/eda_findpeaks.html)
+
+Event fields: recording/channel, scr_id, onset/peak/recovery times, onset and peak levels, onset-to-peak amplitude, rise duration, recovery fraction, recovery duration, area with baseline definition, method, signal_basis, unit, threshold type/value, validity and censor reason. Sample indices are supplementary and tied to an explicit grid version.
+
+Recovery: first eligible descending crossing after the peak at a declared fraction of amplitude above onset. State interpolation of crossing time. If a next response, gap or recording end prevents valid observation, use censored/NA with reason. Do not silently use the end of the window as a completed recovery.
+
+[RV05] Name the parameter recovery_fraction_returned: for amplitude A and onset level L, the threshold is L+(1-f)*A, with 0<f<1. Thus f=0.5 means half recovery. Store this definition, crossing interpolation and censoring rule, avoiding ambiguity between fraction recovered and fraction remaining. SCR area must separately name baseline and integration bounds; it is not automatically the same as phasic AUC.
+
+Event attribution: create a separate event_scr_links table instead of duplicating physical SCRs. Use a prespecified onset or peak membership criterion, baseline window, response-onset window, peak search interval and recovery interval. If multiple stimulus windows plausibly claim one response, default to ambiguous and exclude from uniquely attributed primary features; an exploratory multi-label policy must be named. Preserve overlapping source events.
+
+Acceptance: no peaks, exact threshold boundary, leading/trailing peaks, near-ties, overlapping responses, noninteger fs, censored recovery, negative phasic baseline, events at window boundaries and competing event links. Compare precision/recall with a stated matching tolerance; retain each unmatched case for review.
+
+M07. WINDOWS AND SINGLE-PERSON FEATURES
+Future path: core_features/. Phase: P06.
+
+Inputs: SignalBundle, SCRs, events/conditions and window policy. Outputs: features_long, window validity and exclusions. One registry defines each feature's ID, formula, input basis, unit, minimum data, denominator and missing rule.
+
+Window families: whole-record, fixed duration/step, event-related and condition interval. Fixed windows declare anchor, tail-window policy and condition crossing. Events are not silently clipped at bad segments or recording boundaries. A window crossing a long gap is retained with invalid status for primary response features; an explicitly separate descriptive partial-window policy can report values with actual exposure.
+
+Continuous features: mean, median, SD, IQR, valid range, slope, tonic mean/change, phasic signed AUC and optionally positive-only AUC under a different ID, SCR count/rate, amplitude mean/median/sum and rise/recovery summaries. Numerical integration uses time and never connects across invalid gaps. Irregular-time averaging is time-weighted under a specified sample-support convention; regular-grid compatibility statistics are named separately where definitions differ.
+
+Event features: baseline, response presence, count, first amplitude, maximum amplitude, AmpSum, latency, phasic conductance integral, optional driver integral and window validity. Baseline contamination invalidates baseline-relative results. “First” and “maximum” must never share a misleading field name.
+
+Denominators [RV04]: valid_duration_s comes from eligible time support intersected with the window; even row_count/fs is not universally valid. For the default point-sample contract, exposure is the sum of adjacent intervals [t_i,t_(i+1)) whose endpoints and intervening processing support are eligible, clipped to the analysis window. Do not span a detected gap or extrapolate beyond the last timestamp. Isolated valid samples provide zero continuous exposure. If a device supplies explicit acquisition-cell bounds, support them only through a separately named, tested exposure policy. Store policy_id, valid_duration_s and valid_n.
+
+[RV04] Rate exposure is detector-eligible onset time after required left/right context and edge exclusions, not all amplitude-valid time. Assign continuous-window counts by onset in [start,end), using the global SCR catalogue; a globally observed valid peak may lie outside that window if this rule is selected. Keep event onset/peak windows separately specified. SCR rate = 60 × eligible_count / detector_eligible_duration_s. Zero duration gives NA; a valid no-response window gives count 0 and detected-amplitude mean NA. Keep zero-inclusive event amplitude as a separately named feature. A minimal boundary fixture must distinguish N/fs from (N−1)/fs and test a response exactly on a window boundary.
+
+A response touching ineligible signal is excluded or censored under explicit policy. An incomplete recovery can contribute valid amplitude to one feature while remaining unavailable for recovery-time statistics. Store metric-specific validity rather than excluding an entire recording unnecessarily.
+
+Research features: PSD/band power, entropy and time-frequency outputs remain gated by basis, minimum duration/samples, stationarity, parameter definitions and unit derivation. No “stress score” is derived from feature magnitude. Overlapping windows remain labeled and grouped for all downstream splitting/inference.
+
+Acceptance: hand-calculable mean/slope/integrals, known count/exposure, valid-zero versus unavailable, incomplete tail, crossing events/gaps, all-invalid windows and invariant units after conversion. Validate feature eligibility independently of detection success.
+
+M08. GROUP MEMBERSHIP AND CLOCK ALIGNMENT
+Future path: core_sync/alignment*. Phase: P07.
+
+Inputs: group-membership table, per-record clocks, independent anchors, optional anchor uncertainty and quality. Outputs: mapped times, common grid, eligible segments, alignment report and uncertainty limits.
+
+Select an explicit analysis channel/basis per participant and interval. Multiple recordings/channels from one participant do not create additional group members or independent edges. Resolve overlaps, device changes and recording transitions before alignment; never concatenate files by filename order. Membership can vary over time, but every group summary must carry the actual included participants.
+
+Model: t_reference = a + b × t_local; drift_ppm = (b−1)×10^6 under this mapping convention. One anchor allows a with b fixed to 1, while drift remains unestimated. Two anchors identify a line but give no residual degrees of freedom for empirical uncertainty; require device timing evidence or further anchors before claiming precise drift uncertainty. Additional anchors support residual and outlier diagnostics. Never discard an anchor silently.
+
+[RV01] Require b>0 and distinguish the mapping slope from the inverse device clock-rate convention. For uniform local samples, fs_reference=fs_local/b. Map event times, interval boundaries and annotations consistently; all filter cutoffs, slopes, response durations and model time constants use the selected analysis seconds. Piecewise mapping can create piecewise rates and requires segment-aware processing. Cache entries computed before a changed clock map are invalid. Reusing an already processed signal requires demonstrated compatibility, not merely relabeled timestamps.
+
+If reconnection or nonlinear drift exists, split into documented clock segments and validate mapping monotonicity. Report extrapolation outside the anchor span and apply a declared limit. Known device delays need separate evidence. Absolute timestamps without offsets/timezones are insufficient to assert synchronized acquisition.
+
+Create a shared time grid from mapped physical time and declared analysis rate, not row number or equal file length. Apply anti-aliasing as needed; retain masks and interpolation/edge influence. Reject an analysis interval with insufficient common coverage or timing confidence for its intended lag question.
+
+Alignment readiness: verified within declared tolerance, provisional/offset-only, or unverified. Provisional/unverified data can be displayed/exported for diagnosis; formal synchrony inference is blocked unless its timing requirements are justified. A numerical correlation is not evidence of synchronization accuracy.
+
+Acceptance: known offset/drift, two-anchor uncertainty limitation, noisy/outlier anchors, reconnect segments, reversed mapping, different rates, long dropouts and extrapolation. Use a known delayed signal to verify the later lag convention independently of clock fitting.
+
+M09. PAIR/GROUP SYNCHRONY AND NULL MODELS
+Future paths: core_sync/metrics*, nulls*, summaries*. Phase: P07.
+
+Inputs: aligned signals with basis/unit/transform and eligibility, participant membership, windows/lags, prespecified statistic, null design and random streams. Outputs: signed pair results, window×lag surface, coverage, group summaries, null diagnostics and inferential status.
+
+Metrics: lag-zero Pearson; Spearman as a separately selected sensitivity analysis; prespecified lagged Pearson surface; sliding windows; separate tonic/phasic/cleaned bases. Define r_AB(tau)=corr(A(t),B(t+tau)); positive tau means A precedes B under this convention. Export lag-zero, chosen lag and exploratory maximum as distinct estimands. A lagged surface is ordered; only lag-zero or properly symmetrized summaries are symmetric matrices.
+
+Pair eligibility: sufficient overlapping valid time, minimum contiguous duration, no excessive internal gap, sufficient nonzero variance and finite values. Record valid_n, duration, coverage and interpolation for EACH lag. Surrogate comparisons require comparable coverage; otherwise observed and null do not measure the same statistic. Analytic iid correlation p-values are not default inference for autocorrelated EDA.
+
+Group outputs: signed lag-zero matrix, explicit NA/unestimated codes, valid participant/edge counts, mean Fisher-z transformed correlation then back-transform, median and signed distribution, changing composition and coverage. Leave-one-out group comparison excludes the focal participant from the group signal. Define common-complete versus pairwise-available windows and compare them as sensitivity analyses. Pairwise-available correlation matrices may not be PSD; do not silently project them before downstream modeling.
+
+[RV08] Default the descriptive Fisher-z aggregation to Pearson correlations with equal eligible-pair weights within a specified group/window; store weights and pair membership. Use separately named mean/median rank-correlation summaries for Spearman unless another aggregation is explicitly qualified. Across groups/sessions, the design specifies independent-unit weighting and repeated sessions; pooling every edge would give larger groups extra weight. A leave-one-out group signal uses a fixed declared contributing-member set per eligible window and a stated scaling rule, rather than silently changing that set at each sample. Missing composition yields an unavailable or explicitly separate partial result.
+
+Fisher transformation needs an explicit numerical boundary policy for |r| close to 1. Preserve the original r, report any numerical clipping used for aggregation and investigate identical/duplicated channels before treating a perfect correlation as evidence. Fisher averaging is an aggregation scale and does not make overlapping windows or shared-member edges independent.
+
+Temporal null: first implement continuous-segment circular shifts with a minimum shift, seam exclusion, condition boundaries and duration requirements. Masks move consistently with their data if shifts include missingness; prefer long common-valid segments when feasible. If admissible shifts are too few or coverage-matched replicates cannot be obtained, inference is unavailable. Blocks are an optional alternative with an explicitly qualified block-length policy.
+
+[RV06] A restricted circular-shift procedure is not automatically an exact permutation test. Minimum-shift restrictions, seam removal, nonstationarity and coverage rejection may invalidate exchangeability. Label the result as an empirical surrogate-tail probability unless the stronger randomization justification is established. The +1 formula avoids zero estimates but cannot make an unsuitable null valid. Calibrate the entire admitted procedure on repeated null simulations, including masks and selection, before enabling inferential claims for that regime. Distinguish exact enumeration from randomized sampling and record the two-sided convention. [SciPy permutation definitions](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.permutation_test.html)
+
+Partner-specific null: matched pseudodyads across exchangeable sessions/participants with identical task/stimulus timelines, roles and declared matching strata. Never create them from arbitrary groups or within-person pairings. If matching metadata/candidate sessions are absent, mark this analysis unavailable and restrict claims to the temporal null. Include this capability in the first-release design; actual use is data-dependent.
+
+One surrogate replicate creates a coherent participant-level surrogate world and computes all pair/group statistics from it. Pair-specific independent randomization would break the group null. Keep stable child seeds keyed by run/stage/replicate/participant rather than worker completion order.
+
+[RV07] Enforce constraints on relative shifts for tested pairs: two participants can each have a large absolute shift but almost no relative shift, preserving their original alignment. Define an admissible joint-offset sampler, feasibility check and maximum attempts for the declared group/segment. Do not retry indefinitely when no valid surrogate world exists. Acceptance/rejection must follow prespecified time/mask rules, never the surrogate statistic or significance. These constraints alter the null and must be included in RV06 calibration. For fixed-edge group summaries, preserve the observed eligible edge set or use an explicitly qualified coverage/membership-matched estimand; do not drop different edges in each replicate unnoticed.
+
+Tail and selection: prespecify signed positive/negative or two-sided statistics. For a Monte Carlo test under a valid exchangeable construction, p=(1 + number at least as extreme)/(B+1). Store requested/accepted/rejected B, seed, extremeness rule and attainable resolution. If the observed statistic selects max lag/window, each null repeats the full selection. Predefine correction families over pairs, conditions, components, metrics and searches. Small preview B is never silently reused as final evidence.
+
+[RV06] Store attempted and accepted replicate counts, sampling-with/without-replacement policy, attainable resolution and Monte Carlo uncertainty. Plan B against the requested tail precision and correction family, not a universal 999/9999 default; repeated draws do not enlarge the support of a tiny finite randomization space. Do not stop when significance first appears. Refit or repeat any statistic-dependent tuning/selection within the null procedure; independently fixed preprocessing may be reused only with a documented compatibility argument. An unqualified surrogate output remains descriptive/experimental even if a numeric tail estimate can be computed.
+
+Acceptance: independent white noise and AR processes over repeated simulations; known positive/negative coupling and delay; slow shared trends; common-stimulus-only data; membership changes; constant series; unequal masks and impossible shifts. Report rejection-rate Monte Carlo intervals and power/sensitivity, not one illustrative p-value. Never call an average of pairwise edges complete higher-order group coupling or causal leadership.
+
+M10. STATISTICAL DESIGN, ESTIMATION AND DIAGNOSTICS
+Future path: core_statistics/. Phase: P08.
+
+Inputs: validated feature/group summary tables, statistical design and planned contrasts. Outputs: included/excluded data, descriptive summaries, estimates/effect sizes/intervals, test statistics/df, p-values/corrections, model diagnostics and design snapshot.
+
+Supported base designs: descriptive summaries; one-sample comparison against a declared reference; paired within-subject contrasts; independent groups with Welch where appropriate; explicit nonparametric alternatives with tie/missing rules; correlation on independent analytical units; qualified linear mixed-effects models with subject random intercept and supported grouping structure. Do not choose the method by minimum p-value or a simplistic normality-test switch.
+
+Before computation, validate independent_unit, outcome/basis/unit, group/condition/session identities, repeated rows, planned aggregation and covariate types. Optional covariates are never auto-included. Complete-case handling is explicit, with per-variable and joint exclusions; no automatic mean filling. Report N in subjects/groups/sessions/observations separately.
+
+[RV10] Accept structured, allowlisted terms/contrasts/transforms rather than arbitrary user formula strings. Build design matrices directly, or generate vetted formulas from safe internal column aliases. Do not pass CSV/JSON text directly to a Python-evaluating formula parser; Patsy factors can evaluate Python expressions. Render imported IDs/labels as escaped text in reports. [Patsy formula semantics](https://patsy.readthedocs.io/en/latest/formulas.html)
+
+Repeated-window inference: aggregate prespecified summaries to independent units, or use a validated hierarchical model compatible with the data. Ordinary mixed models with an iid residual are not automatically valid for densely overlapping windows. For dyads sharing members, default to group/session summaries plus design-valid cluster resampling; do not expose an unvalidated actor/partner model merely because a generic formula accepts it. More complex symmetric membership models need separate qualification.
+
+Model failures: singularity, separation where applicable, insufficient groups, rank deficiency and convergence failure are visible and block inferential interpretation. Do not remove covariates, switch formulas or simplify random effects silently. Count/zero-inflation outcomes receive design warnings; specialized models remain extensions until validated.
+
+Corrections: explicitly selected family, method, alpha and dependence assumptions. Preserve raw/adjusted p, family size and exclusions. BH/BY/Holm can be implemented through fixed tested library calls; the method selection follows design assumptions. [statsmodels multipletests](https://www.statsmodels.org/stable/generated/statsmodels.stats.multitest.multipletests.html)
+
+[RV11] Freeze planned hypothesis IDs and separately report planned, estimable, tested and failed counts. State the predeclared treatment of unavailable tests for multiplicity; do not shrink/repartition a family after inspecting results. A fixed-family conservative convention may use internal non-rejection placeholders for unavailable tests while keeping public results NA, but this does not repair informative missingness or selective testing. Summarize exclusions by condition/group and distinguish data-quality exclusion from runtime failure. A successful model on remaining records does not validate the planned complete-cohort analysis.
+
+Acceptance: hand-calculable contrasts, fixed reference datasets, missing paired members, conflicting IDs, repeated-window pseudo-N, rank-deficient models, convergence failures, correction sorting/reassembly and prespecified family membership. Confidence interval and effect-size definitions are part of feature/report metadata.
+
+M11. FIGURES, EXPORTS AND REPRODUCIBLE REPORTS
+Future paths: core_plot/, core_export/. Phases: P08, P09, P14.
+
+Inputs: completed compatible results, provenance, report policy and destination. Outputs: figures, tables, report and checksummed export manifest.
+
+Required figures: raw/clean/tonic/phasic/optional driver with QC/events/SCR; QC/coverage summaries; event and condition summaries with independent-unit uncertainty; pair/group signed matrices; synchrony time/lag views; alignment diagnostics; observed/null distributions. Axes state units/basis, uncertainty bands state their construction, and group figures show actual member/edge coverage. Missing/untested cells differ from correlation zero.
+
+Screen display can decimate for speed while preserving extremes and annotation landmarks; computations and exports use full-resolution data. Downsampled visual traces are labeled. Batch output does not initialize Qt. Use PNG/SVG/PDF with recorded size/DPI/font settings and selectable legends. Exported labels and filenames support Chinese.
+
+Run structure:
+  config_resolved.json, input_manifest.csv, environment.json
+  qc_summary.csv, qc_intervals.csv, annotation_history.jsonl
+  processed_signals/, scr_events.csv, event_scr_links.csv
+  windows.csv, features_long.csv, feature_validity.csv
+  synchrony/alignment, pairs, lag_surfaces, coverage, null_summary, group_summary
+  statistics/design, estimates, exclusions, diagnostics
+  figures/, logs/, report.html and optionally report.pdf
+  export_manifest.json
+
+CSV is the public exchange format; internal columnar/chunked cache is optional after measurement and must not become a hidden mandatory input format. Empty tables still contain schema headers. Text columns can use spreadsheet_safe escaping; numeric negative values remain numeric. The exact escaping policy and round-trip behavior are documented.
+
+Reports state analyzed/failed records, available and unavailable methods, data exclusions, timing quality, parameter choices, units/transforms, statistical unit/null/selection/corrections, limitations and provenance. Experimental results cannot appear indistinguishable from qualified outputs. Real screenshot manuals are separate from software-generated result reports.
+
+Export transaction: reserve a new run directory; write temporary stage files; checksum and commit; finalize overall status last. Default no overwrite. Validate writable destination and free-space estimate before running; retain an understandable partial manifest after disk/full/permission failure.
+
+Acceptance: successful, empty, partial and cancelled exports; checksum integrity; safe text handling; Chinese fonts/paths; metadata completeness; opening report offline; figures matching analytical tables. Report generation failure does not erase completed scientific results, but final status records the missing required artifact.
+
+M12. PRESETS, JSON AND PUBLIC CLI
+Future paths: presets/, cli/, config/. Phases: P01, P09.
+
+Presets: single_standard, single_event, single_advanced, group_sync and custom. They are versioned configurations plus explanations, not hidden branches of algorithms. The advanced preset adds stricter QC and validation requirements, not indiscriminate additional filtering. Unqualified illustrative parameter values must be labeled examples and cannot quietly become validated defaults.
+
+Public commands: version, capabilities, validate, plan, run, resume/retry and export. Planned command shape: eda_cli.exe run --config CONFIG --manifest MANIFEST. No commands are executed in this planning delivery. Support human-readable diagnostics and an explicit JSON output mode; send diagnostics/progress to stderr when stdout is machine data.
+
+Proposed stable exit codes: 0 all requested tasks succeeded; 2 input/config invalid; 3 missing selected capability; 4 runtime/global failure; 5 partial batch; 130 cancelled. A no-op due to invalid input is not exit 0. The CLI schema documents these codes and any migration.
+
+GUI/JSON synchronization: editing controls updates a config draft, loading JSON populates controls, and saving retains all supported fields. Before run, display resolved operations, eligibility policies, methods, statistical design, output directory and workload estimate. Validation errors must point to fields; no eval, shell snippets or arbitrary Python import names in configs.
+
+Acceptance: each preset validation, stale/unknown schemas, unknown keys, portable/relative paths resolved against a declared base, same GUI/CLI plan hash, same numerical results within tolerance, cancel/retry/exit codes and deterministic randomization across worker counts.
+
+M13. CHINESE GUI AND BACKGROUND TASKS
+Future path: ui/. Phase: P10.
+
+Use existing PySide6 widgets and module functions/callbacks. Business state is ordinary dictionaries and the shared config; numerical logic stays outside GUI event handlers. Qt's own object model does not require a custom domain class hierarchy.
+
+Pages and responsibilities:
+  Project: create/open local project metadata, select output, view version/capabilities.
+  Import: all nine template controls, file/folder browser, row-count-labeled preview, field mapping and relationship errors.
+  QC: linked raw/processed/QC/event/SCR traces, zoom, interval marking, reasons, undo/redo and revision selection.
+  Preprocessing: ordered steps, unit/rate boundaries and preview diagnostics.
+  Analysis: decomposition/SCR/features/windows, unit-specific parameters and method readiness.
+  Group synchrony: membership, clock anchors/residuals, quality thresholds, metric/null/lag definitions and coverage.
+  Statistics: explicit analytical unit, outcome/contrast/covariates and correction family; show excluded data before run.
+  Results: figures/tables/reports, failed-item retry and open output directory.
+  Shared controls: preset select/import/save, resolved plan, single-record test, batch run, progress/logs/cancel and context help.
+
+Long work executes outside the main event loop. A worker/process queue supplies progress and structured errors; a GUI timer or qualified signal bridge updates widgets. Only the main GUI thread touches widgets. Closing during work requests controlled cancellation and explains retained partial outputs. Preserve unsaved config/annotation drafts through an explicit user action or recovery record; do not silently discard them.
+
+[RV09] Display the active run's frozen config/revision separately from the editable next-run draft. Bind progress, previews and results to run_id and input hashes so stale background responses cannot overwrite a newer selection. Disable conflicting writes or resolve them explicitly; merely using a background thread does not protect shared dictionaries from mutation.
+
+Startup checks detect core and optional methods independently. Missing CUDA or optional solver disables those methods with a reason; the CPU base application remains usable. Do not import optional numerical backends eagerly if they prevent startup.
+
+Acceptance: real backend results for every enabled page, all template buttons, invalid-input navigation, long import/analysis responsiveness, keyboard navigation/high-DPI rendering, help access, cancellation, worker exceptions and no duplicate algorithm implementation. Placeholder curves cannot qualify a page as complete.
+
+M14. CPU PARALLELISM, RESOURCE BUDGETS AND CONDITIONAL GPU
+Future paths: pipeline/execution*, adapters/backend*. Phase: P11.
+
+Measure first on the serial CPU reference. Work units are independent recordings or coherent surrogate batches. Choose worker count from CPU, memory estimate and workload; bound queued arrays and cap BLAS threads to avoid process×thread oversubscription. Whole-group surrogate generation remains coherent even when replicate batches run in parallel.
+
+Frozen processes use a qualified standard-library multiprocessing path, guarded entry and early freeze_support as appropriate. Workers do not create GUI state. Joblib/loky is not assumed supported merely because it works from source. [PyInstaller multiprocessing](https://pyinstaller.org/en/stable/common-issues-and-pitfalls.html)
+
+Memory planning includes signals, masks, copies, interpolation, component arrays, lag surfaces and null workspaces; do not estimate from input CSV size alone. Stream summary/exceedance counts when full surrogate storage is unnecessary. Retain sufficient null diagnostics for audit and permit explicit full-null storage when feasible.
+
+[RV14] Estimate pair_count=n*(n−1)/2, window_count, lag_count and replicate_count before allocation; account for their product where results would otherwise be materialized. Bound surrogate batches and retained null summaries. Whole-record decomposers/solvers need their own memory limit: chunking input CSV does not bound their workspace. Splitting such an algorithm into independently solved chunks changes its boundary/model behavior and requires a separately named validated method. Reject an oversized workload with explicit alternatives instead of silently lowering rate, shrinking B or changing methods.
+
+GPU gate: identify a measured bottleneck, choose an algorithm-equivalent supported path, audit runtime/license/distribution costs, benchmark cold/warm end-to-end execution including transfers and synchronization, then check numerical tolerance. Enable only when benefits justify operational cost on qualified workloads. CPU fallback is allowed only for the same algorithm with recorded backend change; solver/method substitution remains prohibited.
+
+Acceptance: serial/parallel output agreement, seed independence from scheduling, bounded memory, clean process exit, cancellation between batches, frozen EXE stress cases and documented hardware/rate/workload results. If no GPU path meets the gate, ship a complete CPU release and record GPU as unsupported.
+
+M15. CHINESE METHODS, FUNCTION AND OPERATION DOCUMENTATION
+Future path: docs/. Phases: continuous, final assembly P12.
+
+Deliverables: quick start, user guide, methods guide, function developer guide, data dictionaries, configuration/CLI reference, error guide, CPU/GPU explanation and actual-version screenshot walkthrough. Build PDF help through a qualified local toolchain; verify installed offline access. User documentation remains Chinese even though these construction plans are in English.
+
+Every algorithm function documents parameter type/dimension/unit, formula/steps, missing/edge policy, failure behavior, bibliography, upstream implementation/version/license and a minimal example. Every feature links to formula, input basis and eligibility rule. Source citations distinguish original method from a third-party port.
+
+Screenshot checklist: first startup, capability detection, template download, import/mapping, preset, QC/manual revision, preview/test run, batch/cancel, statistics, export and report. Capture the actual release candidate; remove sensitive identifying data; bind each image to version and documented test data. No generated mockup can stand in for a real software screenshot.
+
+Acceptance: Codex repeats the documented workflow on the qualified build, help is findable from relevant pages, examples/configs validate, screenshots match controls, method names and units agree with outputs, and unsupported/experimental limitations are visible. Any interaction that cannot actually be exercised is recorded as unverified instead of being marked passed from code inspection alone.
+
+M16. DEPENDENCY GOVERNANCE, WINDOWS RELEASE AND MAINTENANCE
+Future paths: packaging/, third_party/, tests/release*. Phases: P00/P01 feasibility; P13 qualification.
+
+Runtime selection evaluates interpreter security support, actual Windows wheels, dependency solver constraints, numerical regression, Qt operation and frozen build. Prefer isolated project environments. Preserve selected interpreter source/provenance, artifact hashes, full lock, license/NOTICE inventory, build instructions and actual shipped DLLs. Do not infer a solved environment from individually available wheels.
+
+Libraries: NumPy/SciPy/pandas for numerical/data work; thin NeuroKit adapters where chosen; statsmodels for supported inference; Matplotlib for output; PySide6 for GUI; PyInstaller for freezing. Dependencies remain candidates until qualified. Avoid broad optional extras that pull unrelated packages. Vendoring later requires a complete call graph, provenance, changes and differential tests.
+
+Distribution: two entry EXEs sharing one core/resources directory, templates, presets, help PDFs, sample nonpersonal fixtures and third-party notices. Store writable project/settings/cache data outside read-only installed assets. Qualify one-folder before any installer or one-file. Frozen apps contain a Python runtime; end users do not need a separate installation. [PyInstaller operating mode](https://pyinstaller.org/en/stable/operating-mode.html)
+
+Licensing decisions: audit actual Qt modules and LGPL/commercial obligations; decide cvxEDA/CVXOPT route before including it. A permissive adapter or subprocess boundary does not automatically resolve upstream obligations. CVXOPT's own notice specifies GPL version 3 or later. [CVXOPT notice](https://cvxopt.org/copyright.html) [Qt obligations](https://www.qt.io/development/open-source-lgpl-obligations)
+
+Clean-machine matrix: selected Windows editions/builds and x64 runtime; ordinary user/no admin; no external Python/MATLAB/CUDA; offline; Chinese/space/long-path scenarios as explicitly supported; read-only application directory; missing optional components; corrupted config; multi-process batch and cancellation; export disk/permission failures. Verify fonts, Qt plugins and native numerical DLL loading.
+
+Maintenance: version schemas and presets, document migration/downgrade behavior, keep input/output compatibility tests, review dependency/security updates in controlled releases and retain earlier reference outputs. Define how a numerical method change invalidates caches and changes reports. Provide Codex with a repeatable release/update procedure, source/archive recovery and build evidence. Bit-for-bit reproducible EXEs are a separate target and must not be claimed from numerical reproducibility alone.
+
+Acceptance: complete manifest/SBOM and selected-artifact license records, reproducible build instructions, install-free clean-machine workflow, matched GUI/CLI results, no worker spawn loop, offline help, supported-platform statement, known limits and rollback/recovery instructions. Formal public distribution requires the project's final licensing/signing decision; this planning task performs none of those actions.
+
+CROSS-MODULE COMPLETION RULE
+
+A module is complete only for its declared scope when its contracts, numerical behavior, failure states, tests, provenance and user-visible documentation agree. “Implemented,” “reference matched,” “real-data qualified,” “performance qualified” and “Windows release qualified” are separate evidence columns. No module in this document is marked complete or tested.
+
+[RV12/RV13/RV15] Codex is the development executor. Method specifications must be implementation-ready before coding their algorithms; unresolved study parameters may remain explicit, configurable and unqualified without blocking unrelated implementation. Maintain real headless integration cases from P02 onward. Software engineering delivery can be completed with synthetic/reference checks and honest real-data limitations; claims about new devices/tasks require the missing evidence, not a fabricated validation pass or a mandatory staffing process.

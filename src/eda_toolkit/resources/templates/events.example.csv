@@ -1,0 +1,2 @@
+﻿recording_id,event_id,onset_s,duration_s,event_type,condition,channel,clock_domain
+SYNTHETIC_REC_001,SYNTHETIC_EVENT_001,1.00,0.50,stimulus,SYNTHETIC_CONDITION_A,EDA,recording_local

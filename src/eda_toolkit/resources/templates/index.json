@@ -1,0 +1,131 @@
+{
+  "schema_version": "1.0",
+  "templates": [
+    {
+      "name": "signals",
+      "display_name": "信号",
+      "description": "长表，每行是一条采样值；原始时间顺序必须保持不变。",
+      "template_file": "signals.csv",
+      "example_file": "signals.example.csv",
+      "schema_file": "signals.schema.json",
+      "example_label": "SYNTHETIC_ONLY",
+      "actions": [
+        "view",
+        "download",
+        "import"
+      ]
+    },
+    {
+      "name": "participants",
+      "display_name": "参与者",
+      "description": "参与者级元数据；experimental_group 与互动 group_id 不同。",
+      "template_file": "participants.csv",
+      "example_file": "participants.example.csv",
+      "schema_file": "participants.schema.json",
+      "example_label": "SYNTHETIC_ONLY",
+      "actions": [
+        "view",
+        "download",
+        "import"
+      ]
+    },
+    {
+      "name": "events",
+      "display_name": "事件",
+      "description": "记录内事件。channel 为具体通道名或显式 * 广播。",
+      "template_file": "events.csv",
+      "example_file": "events.example.csv",
+      "schema_file": "events.schema.json",
+      "example_label": "SYNTHETIC_ONLY",
+      "actions": [
+        "view",
+        "download",
+        "import"
+      ]
+    },
+    {
+      "name": "conditions",
+      "display_name": "条件区间",
+      "description": "以半开区间 [start_s,end_s) 表示；重叠语义由设计声明。",
+      "template_file": "conditions.csv",
+      "example_file": "conditions.example.csv",
+      "schema_file": "conditions.schema.json",
+      "example_label": "SYNTHETIC_ONLY",
+      "actions": [
+        "view",
+        "download",
+        "import"
+      ]
+    },
+    {
+      "name": "input_manifest",
+      "display_name": "输入清单",
+      "description": "逐文件声明来源、身份、速率、单位和时钟。",
+      "template_file": "input_manifest.csv",
+      "example_file": "input_manifest.example.csv",
+      "schema_file": "input_manifest.schema.json",
+      "example_label": "SYNTHETIC_ONLY",
+      "actions": [
+        "view",
+        "download",
+        "import"
+      ]
+    },
+    {
+      "name": "group_membership",
+      "display_name": "互动组成员",
+      "description": "描述社会互动/配对组，而不是实验组别。",
+      "template_file": "group_membership.csv",
+      "example_file": "group_membership.example.csv",
+      "schema_file": "group_membership.schema.json",
+      "example_label": "SYNTHETIC_ONLY",
+      "actions": [
+        "view",
+        "download",
+        "import"
+      ]
+    },
+    {
+      "name": "sync_anchors",
+      "display_name": "同步锚点",
+      "description": "用独立时钟事件估计映射；不以 EDA 相似度寻找对齐。",
+      "template_file": "sync_anchors.csv",
+      "example_file": "sync_anchors.example.csv",
+      "schema_file": "sync_anchors.schema.json",
+      "example_label": "SYNTHETIC_ONLY",
+      "actions": [
+        "view",
+        "download",
+        "import"
+      ]
+    },
+    {
+      "name": "manual_qc",
+      "display_name": "人工 QC 标注",
+      "description": "半开时间范围和追加审计；undo/redo 指向旧决定。",
+      "template_file": "manual_qc.csv",
+      "example_file": "manual_qc.example.csv",
+      "schema_file": "manual_qc.schema.json",
+      "example_label": "SYNTHETIC_ONLY",
+      "actions": [
+        "view",
+        "download",
+        "import"
+      ]
+    },
+    {
+      "name": "statistical_design",
+      "display_name": "统计设计",
+      "description": "使用结构化字段，不接受可执行公式。",
+      "template_file": "statistical_design.csv",
+      "example_file": "statistical_design.example.csv",
+      "schema_file": "statistical_design.schema.json",
+      "example_label": "SYNTHETIC_ONLY",
+      "actions": [
+        "view",
+        "download",
+        "import"
+      ]
+    }
+  ]
+}

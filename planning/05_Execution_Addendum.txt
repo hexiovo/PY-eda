@@ -1,0 +1,19 @@
+EDA Analysis Software — Execution Addendum
+Date: 2026-10-25
+Applies to: this user-authorized task
+RUN: 20261025-eda-analysis-p00-p14
+
+1. Current authority
+The user explicitly authorized continuous development across P00-P14 and most recently changed the planner to gpt-6.1-sol/high. The original request preferred multiple subagents. The recording agent received this through the coordinating agent and saved its relayed wording at RUN/approvals/current-task-scope-relay.txt. This is not represented as a raw transcript export or gate-specific approval.
+
+Previous source-plan statements that the planning delivery was planning-only and that future work must stop after one selected phase are preserved as historical statements about that delivery. The source files are not edited. The latest user scope applies to this task: perform P00 first, then continue across P00-P14 according to the detailed execution plan and phase dependencies. Verification cadence is large/per_step. Review mode is recommended_execution under the standing user preference and current scope. Reports remain versioned/hash-bound; this mode does not claim individual manual review. Real verification prerequisites and stop conditions remain.
+
+2. Routing and concurrency
+Planner gpt-6.1-sol/high; execution/recording gpt-6-luna/max. Multiple subagents are allowed by the user. Actual shared host ceiling is four total slots including the main coordinator. Role labels do not prove actual model route; record route evidence where available and stay within capacity.
+
+3. Product/evidence scope
+The whole first release is in scope: CSV/templates, QC/manual history, preprocessing, tonic/phasic/SCR, window/features, clock alignment and signed group synchrony/nulls, statistics/figures/exports/provenance, shared procedural core, five JSON presets, CLI, Chinese GUI and docs, CPU/qualified parallelism, conditional GPU, actual-version screenshots, in-app PDF, and qualified Windows x64 one-folder distribution with separate eda_gui.exe and eda_cli.exe entry points sharing one core/resources, without end-user Python/MATLAB. Research methods are separately gated; unsupported stress/emotion scores and diagnosis are excluded.
+Local P13 packaging/clean-machine qualification is authorized. Public publication, website deployment, public repository pushes and external messages are separate actions and are not implied by producing a local build. Missing real data limits scientific claims without stopping unrelated engineering.
+
+4. Source and evidence integrity
+Original source and planning/00-04 remain read-only. This new addendum records scope/policy only. Historical package/version/license statements remain unverified until checked against exact selected source/wheel, dependency closure, license texts and hashes. P00 license_inventory.csv is unresolved until those actual artifacts exist and are reviewed.

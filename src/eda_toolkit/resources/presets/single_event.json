@@ -1,0 +1,274 @@
+{
+  "schema_version": "1.1",
+  "pipeline_id": "single_event",
+  "preset_version": "1.1",
+  "input": {
+    "manifest": null,
+    "signals": [],
+    "participants": null,
+    "events": null,
+    "conditions": null,
+    "group_membership": null,
+    "sync_anchors": null,
+    "manual_qc": null,
+    "statistical_design": null,
+    "encoding": "utf-8-sig",
+    "delimiter": ",",
+    "missing_tokens": [
+      "",
+      "NA",
+      "NaN"
+    ],
+    "base_directory": null
+  },
+  "mapping": {
+    "columns": {},
+    "constants": {},
+    "eda_unit": null,
+    "sampling_rate_hz": null,
+    "time_unit": "s",
+    "clock_domain": "recording_local"
+  },
+  "qc": {
+    "min_uS": null,
+    "max_uS": null,
+    "max_slope_uS_s": null,
+    "max_jump_uS": null,
+    "flatline_duration_s": 5.0,
+    "flatline_tolerance_uS": 0.0,
+    "gap_factor": 1.5,
+    "exclude_auto": true,
+    "annotations": []
+  },
+  "preprocess": {
+    "interpolate_max_gap_s": 0.0,
+    "interpolation": "linear",
+    "smoothing": "none",
+    "smoothing_window_s": 0.5,
+    "lowpass_hz": null,
+    "filter_order": 2,
+    "resample_hz": null,
+    "baseline": null,
+    "scaling": "none",
+    "edge_tolerance": 0.001,
+    "min_segment_duration_s": 0.0,
+    "jitter_tolerance": 0.01
+  },
+  "decomposition": {
+    "method": "filter_separation",
+    "cutoff_hz": 0.05,
+    "order": 2,
+    "edge_tolerance": 0.001,
+    "driver": {
+      "tau_rise_s": 0.7,
+      "tau_decay_s": 2.0,
+      "tonic_knot_s": 10.0,
+      "sparsity": 0.01,
+      "ridge": 1e-06,
+      "tonic_smoothness": 10.0,
+      "kernel_tail_tolerance": 0.001,
+      "max_iterations": 2000,
+      "gradient_tolerance": 1e-07,
+      "function_tolerance": 1e-12,
+      "kkt_tolerance": 0.0001,
+      "max_segment_samples": 100000,
+      "burst_threshold_uS_s": 0.01
+    }
+  },
+  "scr": {
+    "method": "trough_to_peak",
+    "signal_basis": "phasic",
+    "threshold_type": "absolute",
+    "amplitude_min_uS": 0.05,
+    "relative_fraction": 0.1,
+    "reference_scope": "recording",
+    "min_rise_s": 0.0,
+    "max_rise_s": 10.0,
+    "min_interval_s": 1.0,
+    "recovery_fraction_returned": 0.5,
+    "onset_left_context_s": 0.0,
+    "onset_right_context_s": 10.0
+  },
+  "windows": {
+    "whole_record": true,
+    "fixed_length_s": null,
+    "fixed_step_s": 30.0,
+    "tail_policy": "drop",
+    "event_baseline_s": [
+      -2.0,
+      0.0
+    ],
+    "event_response_s": [
+      1.0,
+      4.0
+    ],
+    "event_peak_s": [
+      1.0,
+      10.0
+    ],
+    "event_recovery_s": [
+      1.0,
+      20.0
+    ],
+    "min_coverage": 0.8
+  },
+  "features": {
+    "ids": [],
+    "exclude_interpolated": true,
+    "extended": {
+      "enabled": true,
+      "baseline_min_uS": 1e-06,
+      "trial_series": {
+        "series_by": [
+          "condition",
+          "event_type"
+        ],
+        "min_slope_trials": 5,
+        "min_logit_trials": 8,
+        "min_decay_trials": 8,
+        "decay_max_rate": 10.0,
+        "decay_max_nfev": 1000
+      },
+      "nonspecific": {
+        "enabled": true,
+        "annotation_coverage": []
+      },
+      "spectral": {
+        "enabled": true,
+        "basis": "clean",
+        "segment_s": 256.0,
+        "overlap": 0.5,
+        "window": "hann",
+        "detrend": "constant",
+        "min_segments": 2,
+        "min_cycles": 2.0,
+        "bands": [
+          {
+            "id": "eda_045_025",
+            "low_hz": 0.045,
+            "high_hz": 0.25
+          }
+        ],
+        "normalization_band_hz": [
+          0.01,
+          0.5
+        ]
+      },
+      "autocorrelation": {
+        "enabled": true,
+        "lags_s": [
+          1.0,
+          5.0,
+          10.0
+        ],
+        "min_pairs": 20
+      },
+      "complexity": {
+        "enabled": true,
+        "basis": "clean",
+        "min_samples": 200,
+        "max_samples": 5000,
+        "max_pair_comparisons": 25000000,
+        "sampen": {
+          "m": 2,
+          "delay": 1,
+          "r_mode": "sd_fraction",
+          "r": 0.2
+        },
+        "permen": {
+          "dimension": 3,
+          "delay": 1,
+          "normalize": true,
+          "ties": "stable"
+        },
+        "dfa": {
+          "order": 1,
+          "min_samples": 256,
+          "min_scale": 4,
+          "max_scale_fraction": 0.25,
+          "scale_count": 10,
+          "min_scales": 6
+        }
+      },
+      "group_temporal": {
+        "enabled": true,
+        "correlation_threshold": 0.1,
+        "lag_stability_tolerance_s": 1.0,
+        "min_valid_windows": 3
+      }
+    }
+  },
+  "synchrony": {
+    "enabled": false,
+    "basis": "phasic",
+    "metric": "pearson",
+    "window_s": 30.0,
+    "step_s": 30.0,
+    "max_lag_s": 5.0,
+    "lag_step_s": 1.0,
+    "min_coverage": 0.8,
+    "min_samples": 8,
+    "analysis_rate_hz": 4.0,
+    "timing_tolerance_s": 0.1,
+    "allow_provisional": false,
+    "shared_clock_verified": false,
+    "standardize": true,
+    "null_method": "circular_shift",
+    "null_replicates": 99,
+    "min_shift_s": 10.0,
+    "max_attempts": 10000,
+    "tail": "two-sided",
+    "seed": 2026,
+    "pseudodyad_strata": [],
+    "matching_fields": [],
+    "analysis_intervals_s": null,
+    "analysis_context_s": 0.0,
+    "pseudodyad_exchangeability": false
+  },
+  "statistics": {
+    "enabled": false,
+    "designs": [],
+    "alpha": 0.05,
+    "correction": "holm",
+    "missing_policy": "complete_case",
+    "planned_hypotheses": []
+  },
+  "compute": {
+    "backend": "cpu",
+    "workers": 1,
+    "seed": 2026,
+    "memory_limit_mb": 2048,
+    "max_pairs": 10000,
+    "max_windows": 10000,
+    "max_null_evaluations": 10000000
+  },
+  "output": {
+    "directory": "results",
+    "overwrite": false,
+    "formats": [
+      "csv",
+      "json",
+      "html",
+      "png",
+      "xlsx"
+    ],
+    "spreadsheet_safe": true,
+    "redact_paths": true,
+    "save_processed_signals": true
+  },
+  "workspace": {
+    "project_directory": null,
+    "autosave_enabled": true,
+    "autosave_debounce_ms": 750,
+    "restore_prompt": true,
+    "queue_autostart": false,
+    "queue_parallel_tasks": 1
+  },
+  "runtime": {
+    "log_level": "INFO",
+    "log_max_bytes": 10485760,
+    "log_backup_count": 5,
+    "eta_min_completed_units": 3,
+    "event_schema_version": "1.0"
+  }
+}

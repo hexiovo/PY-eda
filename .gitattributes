@@ -1,0 +1,2 @@
+# Preserve source bytes used by release fingerprints on all platforms.
+* -text

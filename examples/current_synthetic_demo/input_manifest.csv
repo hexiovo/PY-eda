@@ -1,0 +1,5 @@
+﻿file_path,recording_id,subject_id,session_id,sampling_rate_hz,eda_unit,clock_domain
+synthetic_001.csv,synthetic_001,001,demo,4,uS,recording_local
+synthetic_002.csv,synthetic_002,002,demo,4,uS,recording_local
+synthetic_003.csv,synthetic_003,003,demo,4,uS,recording_local
+synthetic_004.csv,synthetic_004,004,demo,4,uS,recording_local
