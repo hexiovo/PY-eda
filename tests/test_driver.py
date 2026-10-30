@@ -254,8 +254,8 @@ def test_gui_driver_enablement_parameters_and_switch_guard(tmp_path,monkeypatch)
         assert state['config']['features']['ids']==['driver_integral_uS']
         method.setCurrentIndex(method.findData('filter_separation'))
         assert method.currentData()=='bateman_sparse' and warnings
-        parameters=json.loads(w['driver_parameters'].toPlainText());parameters['sparsity']=.02
-        w['driver_parameters'].setPlainText(json.dumps(parameters));w['driver_apply'].click()
+        w['driver_parameters'].controls['sparsity'].setValue(.02)
+        w['driver_apply'].click()
         assert state['config']['decomposition']['driver']['sparsity']==.02
         assert state['feature_registry']['driver_integral_uS']['parameters']['sparsity']==.02
     finally:

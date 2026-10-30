@@ -1,0 +1,150 @@
+{
+  "schema_version": "1.0",
+  "name": "manual_qc",
+  "display_name": "人工 QC 标注",
+  "description": "半开时间范围和追加审计；undo/redo 指向旧决定。",
+  "fields": [
+    {
+      "name": "annotation_id",
+      "type": "string",
+      "unit": "none",
+      "required": true,
+      "missing": "forbidden",
+      "foreign_key": null,
+      "clock": null,
+      "description": ""
+    },
+    {
+      "name": "recording_id",
+      "type": "string",
+      "unit": "none",
+      "required": true,
+      "missing": "forbidden",
+      "foreign_key": "signals.recording_id",
+      "clock": null,
+      "description": ""
+    },
+    {
+      "name": "channel",
+      "type": "string",
+      "unit": "none",
+      "required": false,
+      "missing": "allowed",
+      "foreign_key": null,
+      "clock": null,
+      "description": "具体通道或显式 * 广播。"
+    },
+    {
+      "name": "start_s",
+      "type": "number",
+      "unit": "s",
+      "required": false,
+      "missing": "allowed",
+      "foreign_key": null,
+      "clock": "clock_domain",
+      "description": "exclude/restore 必填；undo/redo 可留空。"
+    },
+    {
+      "name": "end_s",
+      "type": "number",
+      "unit": "s",
+      "required": false,
+      "missing": "allowed",
+      "foreign_key": null,
+      "clock": "clock_domain",
+      "description": "exclude/restore 必填；使用半开区间。"
+    },
+    {
+      "name": "action",
+      "type": "string",
+      "unit": "none",
+      "required": true,
+      "missing": "forbidden",
+      "foreign_key": null,
+      "clock": null,
+      "description": "",
+      "allowed_values": [
+        "exclude",
+        "restore",
+        "undo",
+        "redo"
+      ]
+    },
+    {
+      "name": "reason",
+      "type": "string",
+      "unit": "none",
+      "required": true,
+      "missing": "forbidden",
+      "foreign_key": null,
+      "clock": null,
+      "description": ""
+    },
+    {
+      "name": "operator",
+      "type": "string",
+      "unit": "none",
+      "required": true,
+      "missing": "forbidden",
+      "foreign_key": null,
+      "clock": null,
+      "description": ""
+    },
+    {
+      "name": "timestamp",
+      "type": "string",
+      "unit": "none",
+      "required": true,
+      "missing": "forbidden",
+      "foreign_key": null,
+      "clock": null,
+      "description": "实际操作时间，建议带 UTC 偏移。"
+    },
+    {
+      "name": "revision",
+      "type": "integer",
+      "unit": "revision",
+      "required": true,
+      "missing": "forbidden",
+      "foreign_key": null,
+      "clock": null,
+      "description": ""
+    },
+    {
+      "name": "parent_revision",
+      "type": "integer",
+      "unit": "revision",
+      "required": true,
+      "missing": "forbidden",
+      "foreign_key": null,
+      "clock": null,
+      "description": ""
+    },
+    {
+      "name": "target_annotation_id",
+      "type": "string",
+      "unit": "none",
+      "required": false,
+      "missing": "allowed",
+      "foreign_key": "manual_qc.annotation_id",
+      "clock": null,
+      "description": "undo/redo 必填。"
+    },
+    {
+      "name": "clock_domain",
+      "type": "string",
+      "unit": "none",
+      "required": true,
+      "missing": "forbidden",
+      "foreign_key": null,
+      "clock": null,
+      "description": "标注区间的时钟域。"
+    }
+  ],
+  "unique": [
+    [
+      "annotation_id"
+    ]
+  ],
+  "example_label": "SYNTHETIC_ONLY"
+}

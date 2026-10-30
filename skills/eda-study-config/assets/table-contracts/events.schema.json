@@ -1,0 +1,95 @@
+{
+  "schema_version": "1.0",
+  "name": "events",
+  "display_name": "事件",
+  "description": "记录内事件。channel 为具体通道名或显式 * 广播。",
+  "fields": [
+    {
+      "name": "recording_id",
+      "type": "string",
+      "unit": "none",
+      "required": true,
+      "missing": "forbidden",
+      "foreign_key": "signals.recording_id",
+      "clock": null,
+      "description": ""
+    },
+    {
+      "name": "event_id",
+      "type": "string",
+      "unit": "none",
+      "required": true,
+      "missing": "forbidden",
+      "foreign_key": null,
+      "clock": null,
+      "description": ""
+    },
+    {
+      "name": "onset_s",
+      "type": "number",
+      "unit": "s",
+      "required": true,
+      "missing": "forbidden",
+      "foreign_key": null,
+      "clock": "clock_domain",
+      "description": ""
+    },
+    {
+      "name": "duration_s",
+      "type": "number",
+      "unit": "s",
+      "required": true,
+      "missing": "forbidden",
+      "foreign_key": null,
+      "clock": "clock_domain",
+      "description": ""
+    },
+    {
+      "name": "event_type",
+      "type": "string",
+      "unit": "none",
+      "required": true,
+      "missing": "forbidden",
+      "foreign_key": null,
+      "clock": null,
+      "description": ""
+    },
+    {
+      "name": "condition",
+      "type": "string",
+      "unit": "none",
+      "required": false,
+      "missing": "allowed",
+      "foreign_key": "conditions.condition",
+      "clock": null,
+      "description": ""
+    },
+    {
+      "name": "channel",
+      "type": "string",
+      "unit": "none",
+      "required": false,
+      "missing": "allowed",
+      "foreign_key": null,
+      "clock": null,
+      "description": "多通道适用范围；具体通道名或显式 * 广播。"
+    },
+    {
+      "name": "clock_domain",
+      "type": "string",
+      "unit": "none",
+      "required": true,
+      "missing": "forbidden",
+      "foreign_key": null,
+      "clock": null,
+      "description": "事件时间时钟域，必须与信号记录一致。"
+    }
+  ],
+  "unique": [
+    [
+      "recording_id",
+      "event_id"
+    ]
+  ],
+  "example_label": "SYNTHETIC_ONLY"
+}

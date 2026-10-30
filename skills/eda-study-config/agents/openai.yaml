@@ -1,0 +1,4 @@
+interface:
+  display_name: "EDA 实验配置助手"
+  short_description: "根据实验设计生成皮电全流程配置、统计计划、检查记录与零基础主试操作卡"
+  default_prompt: "使用 $eda-study-config，根据我的实验设计生成可验证的全流程配置与零基础主试操作包。"

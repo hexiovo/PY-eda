@@ -14,7 +14,7 @@ cvxEDA、Ledalab与GPU依赖没有包含在基础算法路径。
 - colorama 0.4.6：见许可证原文
 - contourpy 1.4.0：BSD-3-Clause
 - cycler 0.12.1：Copyright (c) 2015, matplotlib project
-- eda-toolkit 0.3.0：见许可证原文
+- eda-toolkit 0.3.1：见许可证原文
 - et_xmlfile 2.0.0：MIT
 - fonttools 4.67.0：MIT
 - formulaic 1.2.2：MIT

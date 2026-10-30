@@ -3,5 +3,5 @@ from multiprocessing import freeze_support
 
 if __name__ == "__main__":
     freeze_support()
-    from eda_toolkit.ui.app import main
+    from eda_toolkit.ui.bootstrap import main
     raise SystemExit(main())

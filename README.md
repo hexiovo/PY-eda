@@ -1,97 +1,91 @@
 # EDA Toolkit
 
-v0.3.0 新增 9 项 Driver 指标及非负 Bateman 稀疏分解，完整目录 144 项。选择 `single_driver` 预设启用；方法、单位、参数和边缘处理见 [Driver 说明](docs/driver-method.md)。滤波 single/group_sync 仍适用 124/135 项，Driver single/group 适用 133/144 项。
+EDA Toolkit 是用于本地整理和分析皮肤电活动（EDA）数据的软件，涵盖数据导入与质量检查、预处理、特征提取、多人同步、统计分析和结果导出。当前发行版为 **v0.3.1**。
 
-EDA Toolkit 0.3.0 是用于皮肤电活动（EDA）数据整理、质控、分段预处理、特征提取、多人同步和结果导出的本地工程。核心数据处理通过普通 Python 函数、NumPy 数组与 pandas 表运行；PySide6 只由图形界面层使用。
+软件运行完成只表示本次流程已执行；这本身不能证明设备适用、参数已校准或研究结论成立。开始分析前，请阅读[验证与限制](docs/验证与限制.md)。
 
-本版本包含 CSV 映射与九类表格模板、可撤销审计的人工 QC、连续段处理、SciPy 独立滤波分离、SCR 检测、四种窗口、统计接口、CLI、中文 GUI，以及 CSV/JSON/HTML/PNG/XLSX/PDF 输出。每次运行保存配置、输入哈希、环境和结果清单。参数仍是研究示例；软件运行成功不等于设备适用、科学验证或可用于临床判断。
+## Windows 便携版
 
-## Windows 便携工程候选版
+在 [v0.3.1 发布页](https://github.com/hexiovo/PY-eda/releases/tag/v0.3.1)查看版本信息，或直接下载 [EDA_Toolkit-0.3.1-Windows-x64.zip](https://github.com/hexiovo/PY-eda/releases/download/v0.3.1/EDA_Toolkit-0.3.1-Windows-x64.zip)。下载后解压，在解压目录中双击 **eda_gui.exe** 打开图形界面；命令行入口是同目录的 **eda_cli.exe**。便携版不需要另装 Python、MATLAB 或 CUDA。
 
-打开 `dist/v0.3/EDA_Toolkit-v0.3.0/eda_gui.exe`；命令行使用同目录的 `eda_cli.exe`。ZIP 位于 `dist/EDA_Toolkit-0.3.0-Windows-x64.zip`。保留整个便携目录，无需安装 Python、MATLAB 或 CUDA。中文手册在便携目录的 `docs/EDA使用指南.pdf`，也可从软件“帮助”菜单打开。
+请保留解压目录的完整结构，包括 **_internal**、**third_party**、**docs**、**assets**、**presets** 和 **skills**；不要单独移动 EXE。中文手册 **docs/EDA使用指南.pdf** 也可从软件的“帮助”菜单打开。
 
-在便携目录中可创建一个新的合成演示项目（目录必须为空）：
+在解压目录中打开 PowerShell，可查看实际运行版本：
 
 ~~~powershell
-& '.\eda_cli.exe' demo --directory "$env:USERPROFILE\Documents\EDA演示"
-& '.\eda_cli.exe' run --config "$env:USERPROFILE\Documents\EDA演示\single.json" --json
+& '.\eda_cli.exe' version --json
 ~~~
 
-当前本机冻结验证与干净系统资格分开记录；验证报告明确测试所对应的构建快照。
+### 运行合成演示
 
-## 源码环境
-
-项目建议 Python 3.11 及以上。当前开发环境使用项目内的 .venv；记录到的实际解释器为 Python 3.14.8。下列命令显式调用项目解释器，不安装到全局环境：
+演示数据用于熟悉命令和输出，不是实验数据，也不能证明设备或方法适用。以下命令会在当前 Windows 用户的“文档”目录下创建演示包；目标目录必须尚不存在。若目录已存在，请把名称改成新的目录。
 
 ~~~powershell
-& '.\.venv\Scripts\python.exe' -m pip install -e '.[dev]'
+$demoDirectory = Join-Path $env:USERPROFILE 'Documents\EDA演示-v0.3.1'
+& '.\eda_cli.exe' demo --directory $demoDirectory
+if ($LASTEXITCODE -ne 0) { throw '演示数据生成失败。' }
+
+$configPath = Join-Path $demoDirectory 'single.json'
+& '.\eda_cli.exe' validate --config $configPath --json
+if ($LASTEXITCODE -ne 0) { throw '演示配置检查失败。' }
+& '.\eda_cli.exe' plan --config $configPath --json
+if ($LASTEXITCODE -ne 0) { throw '演示计划检查失败。' }
+& '.\eda_cli.exe' run --config $configPath --json
+if ($LASTEXITCODE -ne 0) { throw '演示运行失败。' }
 ~~~
 
-运行依赖包括 NumPy、SciPy、pandas、PySide6、Matplotlib、openpyxl、ReportLab 与 statsmodels；pytest 属于开发依赖，PyInstaller 属于可选构建依赖。实际已解析版本见 [环境与来源记录](docs/provenance.md) 和 requirements.lock.txt。安装记录来自开发机，不是干净 Windows 系统验证。
+演示结果写入配置指定的位置。请勿把演示数据中的参数直接用作设备或研究设计建议。
 
-## 启动
+### 使用自己的数据
 
-查看 CLI 命令：
+开始前请阅读[快速入门](docs/快速入门.md)、[CSV 字段字典](docs/CSV字段字典.md)和[操作指南](docs/操作指南.md)。从适用的预设或模板创建配置，依据实际文件填写路径、列名、单位、采样率或时间列、参与者和实验设计信息。先执行 validate 和 plan，查看导入报告、完整诊断与运行计划，再决定是否开始分析。原始输入保持不变，结果写入新的运行目录。
+
+## 分析方法与限制
+
+- 默认 filter_separation 使用 SciPy 二阶 Butterworth SOS 对信号作独立低通/高通分离；它不是 NeuroKit、cvxEDA 或 Ledalab 的兼容实现。
+- bateman_sparse 是本地非负稀疏分解方法。Driver 指标、滤波设置、SCR 阈值和窗口需结合真实设备与任务评估，不能直接视为已校准参数。
+- 同步 surrogate/null 路径仍属于实验方法；不可用的结果会标明状态和原因，不应解释为“没有效应”。
+- 软件不作压力、情绪或疾病判断，也不替代信号质量评估和研究设计审查。
+
+方法定义见[方法指南](docs/方法指南.md)、[Driver 分解说明](docs/driver-method.md)和[验证与限制](docs/验证与限制.md)。
+
+## 研究配置技能
+
+eda-study-config 技能可根据研究方案整理配置草案、参数记录、数据准备清单和操作卡。可直接下载[eda-study-config-0.3.1.zip](https://github.com/hexiovo/PY-eda/releases/download/v0.3.1/eda-study-config-0.3.1.zip)，其中含安装脚本和使用说明；技能边界见[技能说明](skills/README.md)。在源码目录运行 PowerShell 脚本 `skills/install_skill.ps1`；解压技能压缩包后，在该目录运行 `install_skill.ps1`。技能安装完成后开始新的 Codex 对话；若技能未显示，可重启 Codex 后再开新对话。
+
+该技能不安装 EDA Toolkit，也不会代替真实材料的校验。实际能力以当前运行环境的版本、功能、模板及检查结果为准。
+
+## 从源码运行
+
+源码环境需要 Python 3.11 或更新版本。在项目目录打开 PowerShell：
 
 ~~~powershell
+python -m venv .venv
+& '.\.venv\Scripts\python.exe' -m pip install .
 & '.\.venv\Scripts\python.exe' -X utf8 -m eda_toolkit --help
-~~~
-
-启动中文图形界面：
-
-~~~powershell
 & '.\.venv\Scripts\python.exe' -X utf8 -m eda_toolkit.ui.app
 ~~~
 
-如果通过 pip 安装了本项目，eda-cli 与 eda-gui 也分别是命令行和图形界面入口。Windows x64 便携目录为 `dist/v0.3/EDA_Toolkit-v0.3.0`，双击其中 `eda_gui.exe` 启动界面；`eda_cli.exe` 为无界面入口。保留整个目录及 `_internal`、`third_party`，不能只复制一个 EXE。开发机受限 PATH 的冻结进程检查见 `artifacts/verification/v0.2/frozen-application-r2.json`；当前归档核验和摘要见源码仓库中的 `artifacts/verification/v0.2/archive-integrity-current.json` 与 `artifacts/verification/v0.2/release-summary-current.json`。便携包内文件清单为 `release_manifest.json`。这些证据均不代表干净 Windows 验收。
-
-## 用合成数据跑通工程路径
-
-仓库附带 examples/current_synthetic_demo，其中的四条记录、事件、条件和同步元数据全部是确定性生成的工程演示数据，不是被试数据。它用于检查软件路径和输出结构，不证明算法对设备或研究任务有效。
-
-校验配置并查看导入诊断：
-
-~~~powershell
-& '.\.venv\Scripts\python.exe' -X utf8 -m eda_toolkit validate --config examples/current_synthetic_demo/single.json --json
-~~~
-
-查看运行计划：
-
-~~~powershell
-& '.\.venv\Scripts\python.exe' -X utf8 -m eda_toolkit plan --config examples/current_synthetic_demo/single.json --json
-~~~
-
-执行一次合成演示流程：
-
-~~~powershell
-& '.\.venv\Scripts\python.exe' -X utf8 -m eda_toolkit run --config examples/current_synthetic_demo/single.json --json
-~~~
-
-配置将运行结果写入 examples/current_synthetic_demo/results 下的新运行目录。不要把演示配置的结果解释为生理或实验效应。CLI 还提供 version、capabilities、presets、templates、demo、resume、retry 与 export 子命令；详细步骤见 [快速入门](docs/快速入门.md)。
-
-## 从自己的 CSV 开始
-
-先检查 [CSV 字段字典](docs/CSV字段字典.md) 和九模板，再用 validate 确认输入、单位、时钟、关联键和样本结构。带时间列时，时间必须有限且严格递增；没有时间列时必须声明采样率和时间单位。自定义 EDA 列必须显式声明单位。缺失幅值保持为缺失，不会填零。原始输入以被读取的同一字节流计算哈希，不会被改写。
-
-建议先复制配置到自己的项目目录，修改 input 与 mapping，运行 validate，再运行 plan。只有在核对单位、时钟和缺失情况后才进行完整分析。各页面实际操作与截图见 [操作指南](docs/操作指南.md)。
-
-## 方法与证据边界
-
-默认分解方法是本地 SciPy 二阶 Butterworth SOS 的独立低通/高通滤波分离，不是 NeuroKit、cvxEDA 或 Ledalab 的兼容实现。SCR 阈值、窗口和上下文都可配置，但默认数值没有按真实设备/任务校准。同步 surrogate 的可达性和统计尾部概率仍属实验路线；相关实现必须标记实验性或不可用，不能称为已校准显著性检验。
-
-截至 2026-10-26，v0.2 源码套件有 166 项通过，0 失败、错误或跳过；测试报告记录 40 条 Qt 弃用警告。Windows x64 冻结双 EXE 的 20 个预期进程场景符合预期，归档核验覆盖 1665 个 bundle 文件和 1666 个 ZIP 成员。以上是开发机工程证据，不代表干净 Windows、真实设备科学适用性、零模型校准、任务栏视觉或正式对外发行许可已经通过。完整边界见 [交付状态](docs/交付状态.md) 与 [验证与限制](docs/验证与限制.md)。
+命令行支持 validate、plan、run、resume、retry、export、presets、templates 和 demo。依赖版本见 [requirements.lock.txt](requirements.lock.txt)，来源记录见[provenance](docs/provenance.md)。
 
 ## 文档
 
 - [快速入门](docs/快速入门.md)
 - [操作指南](docs/操作指南.md)
 - [方法指南](docs/方法指南.md)
-- [函数开发指南](docs/函数开发指南.md)
-- [特征字典](docs/特征字典.csv)
-- [验证与限制](docs/验证与限制.md)
 - [CSV 字段字典](docs/CSV字段字典.md)
-- GUI 内置中文帮助 PDF：src/eda_toolkit/resources/help/EDA使用指南.pdf
+- [特征字典](docs/特征字典-v1.1.csv)
+- [扩展指标与结果表](docs/扩展指标与结果表-v1.1.md)
+- [验证与限制](docs/验证与限制.md)
 
-## 构建 v0.3.0
+## 构建便携版
 
-在项目 .venv 安装构建依赖后运行 `scripts/build_windows_current.ps1`，再运行 `scripts/verify_driver_release.py` 和 `scripts/finalize_driver_release.py`。构建脚本拒绝覆盖已有同版本便携目录或 ZIP。源码仓库不包含本地运行数据、构建缓存和 EXE；当前交付验证见 [v0.3.0 验证记录](docs/release-validation-v0.3.0.md)。
+在已安装项目依赖的 Windows 环境中运行：
+
+~~~powershell
+& '.\.venv\Scripts\python.exe' -m pip install -e '.[dev,build]'
+& '.\.venv\Scripts\python.exe' -X utf8 scripts/build_help.py
+& '.\scripts\build_windows_current.ps1' -Clean
+~~~
+
+构建脚本会生成 v0.3.1 双入口便携目录、Windows x64 压缩包、技能包和 SHA256 校验清单。构建输出位于 dist/，PyInstaller 中间文件位于 build/；这些文件不纳入源码提交。

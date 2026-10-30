@@ -14,7 +14,7 @@ import uuid
 import numpy as np
 import pandas as pd
 
-from .capabilities import get_capabilities, require_capabilities, source_fingerprint, numerical_environment_fingerprint, inspect_output_directory
+from .capabilities import require_capabilities, source_fingerprint, numerical_environment_fingerprint, inspect_output_directory
 from .config import config_hash, feature_work_method, resolve_config, synchrony_work_method
 from .core_export import atomic_csv, atomic_json, export_run, json_safe, refresh_manifest, safe_name, sha256_file, verify_manifest
 from .errors import error_to_dict, fail
@@ -125,7 +125,7 @@ def preview_plan(config):
     return {"config_sha256": config_hash(resolved), "stages": stages, "resolved_config": resolved,
             "output_directory": inspect_output_directory(output),
             "capabilities": capabilities, "parameter_qualification": "research_examples_not_device_qualified",
-            "workers": resolved["compute"]["workers"], "backend": "cpu",
+            "workers": resolved["compute"]["workers"], "backend": resolved["compute"]["backend"],
             "feature_definitions": feature_definitions}
 
 
@@ -515,13 +515,13 @@ def _summary_artifact_rows(root):
 def run_pipeline(config, input_manifest=None, progress_callback=None, cancel_callback=None, *, _resume_from=None,
                  event_sink=None, runtime_session=None, project_id=None, task_id=None, attempt_id=None,
                  runtime_context=None):
-    """运行同一条真实CPU流程，保留部分/失败/取消状态和可校验的记录缓存。"""
+    """按选定的CPU或GPU后端运行，保留失败/取消状态和可校验的记录缓存。"""
     from .core_io import load_recordings
     started = time.monotonic()
     resolved = _resolve_for_run(config)
     if input_manifest is not None and isinstance(input_manifest, (str, Path)):
         resolved["input"]["manifest"] = str(Path(input_manifest).resolve())
-    require_capabilities(resolved)
+    capabilities = require_capabilities(resolved)
     base = Path(resolved["input"].get("base_directory") or Path.cwd())
     output = Path(resolved["output"]["directory"])
     if not output.is_absolute():
@@ -559,8 +559,8 @@ def run_pipeline(config, input_manifest=None, progress_callback=None, cancel_cal
                "errors": [], "warnings": [], "science_qualification": "pending_representative_real_data"}
     provenance = {"schema_version": "1.0", "config_sha256": config_hash(resolved), "resolved_config": resolved,
                   "source_fingerprint": source_fingerprint(),
-                  "environment_fingerprint": numerical_environment_fingerprint(),
-                  "environment": get_capabilities(), "input_hashes": {}, "method_versions": {},
+                  "environment_fingerprint": numerical_environment_fingerprint(backend=resolved["compute"]["backend"]),
+                  "environment": capabilities, "input_hashes": {}, "method_versions": {},
                   "started_at": datetime.now(timezone(timedelta(hours=8))).isoformat()}
     if isinstance(runtime_session, dict):
         provenance["runtime_session_id"] = runtime_session.get("session_id")
@@ -684,8 +684,28 @@ def run_pipeline(config, input_manifest=None, progress_callback=None, cancel_cal
             else:
                 todo.append(record)
         workers = min(resolved["compute"]["workers"], len(todo) or 1)
-        provenance["compute"] = {"backend": "cpu", "workers_requested": resolved["compute"]["workers"], "workers_actual": workers,
-                                 "executor": "threads", "estimated_buffer_bytes": memory_estimate}
+        backend = resolved["compute"]["backend"]
+        provenance["compute"] = {"backend": backend, "workers_requested": resolved["compute"]["workers"],
+                                 "workers_actual": workers, "executor": "threads",
+                                 "worker_scope": "record_processing",
+                                 "estimated_buffer_bytes": memory_estimate}
+        if backend == "gpu":
+            gpu = capabilities.get("gpu", {})
+            provenance["compute"].update({
+                "accelerated_method": "bateman_sparse",
+                "accelerated_stage": "objective_gradient_fft",
+                "device": gpu.get("device"),
+                "device_count": gpu.get("device_count"),
+                "compute_capability": gpu.get("compute_capability"),
+                "cupy_version": gpu.get("cupy_version"),
+                "cupy_distribution": gpu.get("cupy_distribution"),
+                "cuda_driver_version": gpu.get("cuda_driver_version"),
+                "cuda_runtime_version": gpu.get("cuda_runtime_version"),
+                "driver_version": gpu.get("driver_version"),
+                "gpu_concurrency": 1,
+                "gpu_serialized": True,
+                "cpu_stages_remaining": ["preprocessing", "features", "statistics", "plotting", "export"],
+            })
         if workers == 1:
             for record in todo:
                 _cancel(cancel_callback)
@@ -1082,11 +1102,12 @@ def resume_run(directory, progress_callback=None, cancel_callback=None, *, event
     state = json.loads((root / "pipeline_state.json").read_text(encoding="utf-8"))
     if state.get("source_fingerprint") != source_fingerprint():
         fail("resume_implementation_changed", "算法实现/版本已改变；请保留旧结果并以新运行重新计算。", stage="resume")
-    if state.get("environment_fingerprint") != numerical_environment_fingerprint():
-        fail("resume_environment_changed", "数值依赖/解释器/线程环境已变化，不能复用旧环境的缓存。", stage="resume")
     resolved = resolve_config(root / "resolved_config.json")
     if config_hash(resolved) != state["config_sha256"]:
         fail("resume_config_changed", "已保存的参数发生改变，不能作为同一任务恢复。", stage="resume")
+    require_capabilities(resolved)
+    if state.get("environment_fingerprint") != numerical_environment_fingerprint(backend=resolved["compute"]["backend"]):
+        fail("resume_environment_changed", "数值依赖/解释器/线程环境已变化，不能复用旧环境的缓存。", stage="resume")
     for path, expected in state.get("input_hashes", {}).items():
         if not Path(path).is_file() or sha256_file(path) != expected:
             fail("resume_input_changed", "已消费输入发生变化或缺失，必须作为新运行重新分析。", stage="resume", field=path)

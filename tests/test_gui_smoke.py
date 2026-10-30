@@ -38,8 +38,10 @@ def test_gui_config_path_resolution_and_duplicate_json_rejection(tmp_path: Path,
     try:
         assert Path(state["config"]["input"]["base_directory"]) == project.resolve()
         assert state["capabilities"]["output_directory"]["writable"] is True
-        capability_text = state["widgets"]["capabilities_label"].text()
-        assert all(label in capability_text for label in ("CPU", "RAM", "GPU", "输出探针"))
+        assert state["widgets"]["environment_check_button"].text() == "环境监测"
+        assert state["widgets"]["capabilities_label"].isHidden()
+        assert state["widgets"]["compute_backend"].currentData() == "cpu"
+        assert state["widgets"]["compute_workers"].value() == 1
         records, _tables, _report = load_recordings(options=state["config"])
         assert len(records) == 1
         assert records[0]["time_s"].tolist() == [0.0, 0.25, 0.5, 0.75]
@@ -99,9 +101,9 @@ def test_workbench_config_templates_and_real_background_pipeline(tmp_path: Path,
         state["app"].processEvents()
         assert window.grab().save(str(target_dir / filename), "PNG")
 
-    widgets["preset"].setCurrentText("single_event")
+    widgets["preset"].setCurrentIndex(widgets["preset"].findData("single_event"))
     assert state["config"]["pipeline_id"] == "single_event"
-    widgets["preset"].setCurrentText("single_standard")
+    widgets["preset"].setCurrentIndex(widgets["preset"].findData("single_standard"))
     widgets["config_json"].setPlainText(json.dumps(state["config"], ensure_ascii=False, indent=2))
     widgets["apply_json"].click()
     assert state["config"]["pipeline_id"] == "single_standard"
@@ -451,9 +453,7 @@ def test_metric_registry_selector_and_extended_parameter_controls(tmp_path: Path
         assert state["config"]["features"]["ids"] == [advanced_id]
         assert not set(state["config"]["features"]["ids"]).intersection(LEGACY_FEATURE_IDS)
         autocorrelation_editor = widgets["extended_parameter_editors"]["autocorrelation"]
-        autocorrelation = json.loads(autocorrelation_editor.toPlainText())
-        autocorrelation["enabled"] = False
-        autocorrelation_editor.setPlainText(json.dumps(autocorrelation, ensure_ascii=False, indent=2))
+        autocorrelation_editor.field_widgets["enabled"].setChecked(False)
         widgets["apply_extended_autocorrelation"].click()
         assert state["config"]["features"]["extended"]["autocorrelation"]["enabled"] is True
         assert any("先取消选择" in warning for warning in warnings)
@@ -473,15 +473,16 @@ def test_metric_registry_selector_and_extended_parameter_controls(tmp_path: Path
         assert "全部可用指标" in widgets["feature_selection_status"].text()
 
         spectral_editor = widgets["extended_parameter_editors"]["spectral"]
-        spectral = json.loads(spectral_editor.toPlainText())
-        spectral["min_cycles"] = 2.5
-        spectral_editor.setPlainText(json.dumps(spectral, ensure_ascii=False, indent=2))
+        spectral_editor.field_widgets["min_cycles"].setValue(2.5)
         widgets["apply_extended_spectral"].click()
         state["app"].processEvents()
         assert state["config"]["features"]["extended"]["spectral"]["min_cycles"] == 2.5
-        spectral_editor.setPlainText('{"min_cycles": 4,}')
+        spectral_bands = spectral_editor.field_widgets["bands"].table
+        spectral_bands.cellWidget(0, 2).setValue(0.03)
         widgets["apply_extended_spectral"].click()
         assert warnings and state["config"]["features"]["extended"]["spectral"]["min_cycles"] == 2.5
+        assert "未应用" in widgets["extended_parameter_status_spectral"].text()
+        assert not hasattr(spectral_editor, "setPlainText")
 
         widgets["feature_baseline_min"].setValue(2e-6)
         state["app"].processEvents()
@@ -514,6 +515,14 @@ def test_metric_registry_selector_and_extended_parameter_controls(tmp_path: Path
         saved_config = read_project_snapshot(state["project"])["config"]
         assert saved_config["features"]["extended"]["baseline_min_uS"] == 2e-6
         assert saved_config["features"]["extended"]["spectral"]["min_cycles"] == 2.5
+
+        workers = 3 if state["config"]["compute"]["workers"] != 3 else 4
+        widgets["compute_workers"].setValue(workers)
+        assert state["config"]["compute"]["workers"] == workers
+        if state["config"]["decomposition"]["method"] != "bateman_sparse":
+            widgets["compute_backend"].setCurrentIndex(widgets["compute_backend"].findData("gpu"))
+            assert state["config"]["compute"]["backend"] == "cpu"
+            assert any("GPU 仅支持 bateman_sparse" in warning for warning in warnings)
     finally:
         window.close()
         state["shutdown"]()
@@ -747,7 +756,7 @@ def test_log_export_runs_in_background_worker(tmp_path: Path, monkeypatch):
 
 
 
-def test_preflight_cancel_and_generation_discard_for_config_and_project_changes(tmp_path: Path, monkeypatch):
+def test_preflight_cancel_and_generation_discard_for_applied_config_and_project_changes(tmp_path: Path, monkeypatch):
     monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
     from PySide6.QtWidgets import QFileDialog, QMessageBox
     import eda_toolkit.runtime_preflight as runtime_preflight
@@ -801,17 +810,15 @@ def test_preflight_cancel_and_generation_discard_for_config_and_project_changes(
         wait_for_discard()
         assert cancel_callback() is True
 
-        state["widgets"]["config_json"].setPlainText(json.dumps(
-            {**state["config"], "compute": {**state["config"]["compute"], "workers": 2}},
-            ensure_ascii=False, indent=2))
         cancel_callback = start_and_wait_for_worker()
-        state["widgets"]["config_json"].setPlainText(json.dumps(
-            {**state["config"], "compute": {**state["config"]["compute"], "workers": 1}},
-            ensure_ascii=False, indent=2))
+        gap_control = state["widgets"]["preprocess.interpolate_max_gap_s"]
+        original_gap = gap_control.value()
+        changed_gap = original_gap + 0.25 if original_gap <= 3599.5 else original_gap - 0.25
+        gap_control.setValue(changed_gap)
         wait_for_discard()
         assert cancel_callback() is True
 
-        state["widgets"]["config_json"].setPlainText(json.dumps(state["config"], ensure_ascii=False, indent=2))
+        gap_control.setValue(original_gap)
         cancel_callback = start_and_wait_for_worker()
         state["widgets"]["project_open"].click()
         assert Path(state["project"]["path"]).resolve() == project_a.resolve()

@@ -1,0 +1,137 @@
+{
+  "schema_version": "1.0",
+  "name": "statistical_design",
+  "display_name": "统计设计",
+  "description": "使用结构化字段，不接受可执行公式。",
+  "fields": [
+    {
+      "name": "design_id",
+      "type": "string",
+      "unit": "none",
+      "required": true,
+      "missing": "forbidden",
+      "foreign_key": null,
+      "clock": null,
+      "description": ""
+    },
+    {
+      "name": "outcome",
+      "type": "string",
+      "unit": "none",
+      "required": true,
+      "missing": "forbidden",
+      "foreign_key": null,
+      "clock": null,
+      "description": "预先定义的结果变量或 feature_id。"
+    },
+    {
+      "name": "design_type",
+      "type": "string",
+      "unit": "none",
+      "required": true,
+      "missing": "forbidden",
+      "foreign_key": null,
+      "clock": null,
+      "description": "",
+      "allowed_values": [
+        "descriptive",
+        "one_sample",
+        "paired",
+        "welch",
+        "independent_correlation",
+        "random_intercept_lmm"
+      ]
+    },
+    {
+      "name": "independent_unit",
+      "type": "string",
+      "unit": "none",
+      "required": true,
+      "missing": "forbidden",
+      "foreign_key": null,
+      "clock": null,
+      "description": "",
+      "allowed_values": [
+        "subject",
+        "group",
+        "session"
+      ]
+    },
+    {
+      "name": "subject_id_column",
+      "type": "string",
+      "unit": "none",
+      "required": false,
+      "missing": "allowed",
+      "foreign_key": "participants.subject_id",
+      "clock": null,
+      "description": ""
+    },
+    {
+      "name": "group_column",
+      "type": "string",
+      "unit": "none",
+      "required": false,
+      "missing": "allowed",
+      "foreign_key": null,
+      "clock": null,
+      "description": "实验条件字段，不是社会互动 group_id。"
+    },
+    {
+      "name": "session_id_column",
+      "type": "string",
+      "unit": "none",
+      "required": false,
+      "missing": "allowed",
+      "foreign_key": null,
+      "clock": null,
+      "description": ""
+    },
+    {
+      "name": "condition_column",
+      "type": "string",
+      "unit": "none",
+      "required": false,
+      "missing": "allowed",
+      "foreign_key": "conditions.condition",
+      "clock": null,
+      "description": ""
+    },
+    {
+      "name": "covariates",
+      "type": "json",
+      "unit": "none",
+      "required": false,
+      "missing": "allowed",
+      "foreign_key": null,
+      "clock": null,
+      "description": "JSON 数组；只存结构化名称，不执行公式。"
+    },
+    {
+      "name": "contrast",
+      "type": "json",
+      "unit": "none",
+      "required": false,
+      "missing": "allowed",
+      "foreign_key": null,
+      "clock": null,
+      "description": "结构化对比定义，不执行代码。"
+    },
+    {
+      "name": "correction_family",
+      "type": "string",
+      "unit": "none",
+      "required": false,
+      "missing": "allowed",
+      "foreign_key": null,
+      "clock": null,
+      "description": "预先声明的多重检验家族。"
+    }
+  ],
+  "unique": [
+    [
+      "design_id"
+    ]
+  ],
+  "example_label": "SYNTHETIC_ONLY"
+}

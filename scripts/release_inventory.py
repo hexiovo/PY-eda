@@ -71,10 +71,15 @@ def _verify_prepared_build_info(version, source_scope):
     return payload
 
 
+def _ignore_skill_artifacts(directory, names):
+    ignored = {"__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache", "validation-summary.json"}
+    return [name for name in names if name in ignored or name.endswith((".pyc", ".pyo"))]
+
+
 def _copy_release_metadata(bundle: Path, version: str, source_scope: str):
     if not bundle.is_dir():
         raise FileNotFoundError(f'PyInstaller bundle not found: {bundle}')
-    if not bundle.is_relative_to((PROJECT / 'dist' / f'v{version.rsplit(".", 1)[0]}').resolve()):
+    if not bundle.is_relative_to((PROJECT / 'dist' / f'v{version}').resolve()):
         raise RuntimeError(f'v{version} bundle must be under its versioned dist directory: {bundle}')
     if bundle.name != f'EDA_Toolkit-v{version}':
         raise RuntimeError(f'bundle name must be EDA_Toolkit-v{version}; observed {bundle.name!r}')
@@ -94,6 +99,8 @@ def _copy_release_metadata(bundle: Path, version: str, source_scope: str):
     shutil.copy2(PROJECT / 'src' / 'eda_toolkit' / 'resources' / 'help' / 'EDA使用指南.pdf',
                  bundle / 'docs' / 'EDA使用指南.pdf')
     shutil.copytree(PROJECT / 'assets', bundle / 'assets', dirs_exist_ok=True)
+    shutil.copytree(PROJECT / 'skills', bundle / 'skills', dirs_exist_ok=True,
+                    ignore=_ignore_skill_artifacts)
     preset_root = PROJECT / 'src' / 'eda_toolkit' / 'resources' / 'presets'
     shutil.copytree(preset_root, bundle / 'presets', dirs_exist_ok=True)
     return {'bundle': str(bundle), 'version': version,

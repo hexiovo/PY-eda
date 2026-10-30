@@ -16,10 +16,10 @@ def test_combining_measurements_does_not_compare_dataframe_attributes():
 def test_resume_refuses_changed_numerical_environment(tmp_path, monkeypatch):
     import pytest
     import eda_toolkit.pipeline as pipeline
-    monkeypatch.setattr(pipeline, "numerical_environment_fingerprint", lambda: "environment-one")
+    monkeypatch.setattr(pipeline, "numerical_environment_fingerprint", lambda backend="cpu": "environment-one")
     summary = pipeline.run_pipeline({"output": {"directory": str(tmp_path), "formats": ["json"]}}, cancel_callback=lambda: True)
     assert summary["status"] == "cancelled"
-    monkeypatch.setattr(pipeline, "numerical_environment_fingerprint", lambda: "environment-two")
+    monkeypatch.setattr(pipeline, "numerical_environment_fingerprint", lambda backend="cpu": "environment-two")
     with pytest.raises(ValueError) as caught:
         pipeline.resume_run(summary["directory"])
     assert caught.value.eda_details["code"] == "resume_environment_changed"

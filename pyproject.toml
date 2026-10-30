@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "eda-toolkit"
-version = "0.3.0"
-description = "用于皮肤电活动数据工作的本地工具包（开发中）"
+version = "0.3.1"
+description = "用于皮肤电活动数据整理与分析的本地工具包"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -28,7 +28,7 @@ eda-toolkit = "eda_toolkit.__main__:main"
 eda-cli = "eda_toolkit.cli:main"
 
 [project.gui-scripts]
-eda-gui = "eda_toolkit.ui.app:main"
+eda-gui = "eda_toolkit.ui.bootstrap:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

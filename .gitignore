@@ -10,6 +10,12 @@ __pycache__/
 .coverage
 htmlcov/
 
+# Local temporary files and generated UI shortcuts
+tmp/
+*.tmp
+*.log
+*.lnk
+
 # Build and packaging outputs
 build/
 dist/

@@ -19,16 +19,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-import numpy as np
-import pandas as pd
 from PySide6.QtCore import Qt, QTimer, QUrl
 from PySide6.QtGui import QAction, QBrush, QColor, QDesktopServices, QFont, QFontDatabase, QKeySequence, QPixmap, QIcon
 from PySide6.QtWidgets import (
     QApplication, QCheckBox, QComboBox, QDialog, QDoubleSpinBox, QFileDialog, QFormLayout,
-    QFrame, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLayout, QLineEdit, QListWidget,
-    QMainWindow, QMessageBox, QPlainTextEdit, QProgressBar, QPushButton, QScrollArea, QTextBrowser,
-    QSpinBox, QSplitter, QStackedWidget, QTabWidget, QTableWidget, QTableWidgetItem, QVBoxLayout,
-    QWidget,
+    QFrame, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLayout, QLineEdit, QListWidget, QMenu,
+    QMainWindow, QMessageBox, QPlainTextEdit, QProgressBar, QPushButton, QScrollArea, QStatusBar,
+    QTextBrowser, QSpinBox, QSplitter, QStackedWidget, QTabWidget, QTableWidget, QTableWidgetItem,
+    QToolButton, QVBoxLayout, QWidget,
 )
 
 
@@ -40,6 +38,8 @@ INPUT_KEYS = ("manifest", "participants", "events", "conditions", "group_members
 
 def _table_widget(frame: Any, *, max_rows: int = 200, parent: QWidget | None = None) -> QTableWidget:
     """将已有 DataFrame 展示为有行数上限的只读 Qt 表，不复制或解析输入文件。"""
+    import pandas as pd
+
     data = frame if isinstance(frame, pd.DataFrame) else pd.DataFrame(frame or [])
     data = data.head(max_rows)
     table = QTableWidget(len(data), len(data.columns), parent)
@@ -62,11 +62,19 @@ def _safe_config_text(config: dict[str, Any]) -> str:
 
 
 def _cjk_font_candidates() -> tuple[Path, ...]:
-    """返回随包字体优先、平台字体其次的 CJK 字体文件候选。"""
+    """Return the bundled CJK font first for consistent exported plot labels."""
     bundled = (Path(__file__).resolve().parent.parent / "resources" / "help" / "fonts" /
                "NotoSansSC-Regular.ttf")
     return (bundled, Path(r"C:\Windows\Fonts\msyh.ttc"),
             Path(r"C:\Windows\Fonts\simhei.ttf"), Path(r"C:\Windows\Fonts\NotoSansSC-VF.ttf"))
+
+
+def _ui_font_candidates() -> tuple[Path, ...]:
+    """Prefer the Windows system sans CJK fonts for readable native controls."""
+    bundled = (Path(__file__).resolve().parent.parent / "resources" / "help" / "fonts" /
+               "NotoSansSC-Regular.ttf")
+    return (Path(r"C:\Windows\Fonts\msyh.ttc"), Path(r"C:\Windows\Fonts\simhei.ttf"),
+            bundled, Path(r"C:\Windows\Fonts\NotoSansSC-VF.ttf"))
 
 
 def _resolved_output_directory(config: dict[str, Any]) -> Path:
@@ -103,6 +111,13 @@ def _capability_summary(caps: dict[str, Any]) -> str:
     ])
 
 
+def _compute_compatibility_error(config: dict[str, Any]) -> str | None:
+    if (config.get("compute", {}).get("backend") == "gpu" and
+            config.get("decomposition", {}).get("method") != "bateman_sparse"):
+        return "GPU 后端仅支持 bateman_sparse。请修改计算后端或分解方法；不会自动切换算法。"
+    return None
+
+
 def _format_error(error: Any) -> str:
     details = getattr(error, "eda_details", None)
     if isinstance(details, dict):
@@ -113,6 +128,35 @@ def _format_error(error: Any) -> str:
     return f"{type(error).__name__}: {error}"
 
 
+def warm_runtime_imports(progress_callback=None) -> None:
+    """Preload expensive runtime modules before the main UI is constructed."""
+    if progress_callback:
+        progress_callback("正在加载 NumPy、pandas 和 SciPy…")
+    import numpy  # noqa: F401
+    import pandas  # noqa: F401
+    import scipy  # noqa: F401
+    if progress_callback:
+        progress_callback("正在准备工作台运行组件…")
+    from ..capabilities import get_capabilities  # noqa: F401
+    from ..config import PRESETS, get_preset, parse_json_text, resolve_config, save_config  # noqa: F401
+    from ..core_io import (export_template, list_templates, load_recordings, preview_csv,
+                           read_signal_csv, read_template)  # noqa: F401
+    from ..core_qc import append_annotation, build_quality_mask, redo_annotation, undo_annotation  # noqa: F401
+    from ..pipeline import resolve_run_config  # noqa: F401
+    from ..project_store import (load_recovery_candidates, open_project, read_project_snapshot,
+                                 save_project_revision, load_last_good_draft_export,
+                                 restore_last_good_draft_export)  # noqa: F401
+    from ..task_store import (enqueue_task, get_task, list_task_attempts, list_tasks,
+                              query_tasks, reorder_queued_task, request_task_cancel, retry_task)  # noqa: F401
+    from ..task_queue import (claim_next_task, execute_claimed_task, reconcile_interrupted_tasks,
+                              _process_start_identity)  # noqa: F401
+    from ..marker_store import (delete_marker, export_marker_snapshot, get_markers, import_markers,
+                                list_marker_source_tombstones, merge_marker_event_rows, read_marker_csv,
+                                redo_marker_action, undo_marker_action, update_marker)  # noqa: F401
+    from ..runtime_preflight import preflight_run  # noqa: F401
+    from ..runtime_logging import create_runtime_session, export_logs, load_eta_history, search_logs  # noqa: F401
+
+
 def create_window(initial_config: Any = None):
     """创建工作台并返回 ``(window, state)``；state 暴露控件索引供自动化和集成使用。
 
@@ -120,6 +164,9 @@ def create_window(initial_config: Any = None):
     同一 ``pipeline.run_pipeline``；worker 只读深拷贝快照，所有控件更新由主线程
     QTimer 消费队列事件。窗口和其子页面均使用 Qt 自带控件，无自定义 widget 类。
     """
+    import numpy as np
+    import pandas as pd
+
     from ..capabilities import get_capabilities
     from ..config import PRESETS, get_preset, parse_json_text, resolve_config, save_config
     from ..core_io import (export_template, list_templates, load_recordings, preview_csv,
@@ -139,17 +186,19 @@ def create_window(initial_config: Any = None):
     from ..runtime_preflight import preflight_run
     from ..runtime_logging import create_runtime_session, export_logs, load_eta_history, search_logs
 
-    try:
-        from ..runtime_identity import configure_app_identity, icon_path
-        configure_app_identity()
-    except ImportError:
-        configure_app_identity = None
-        icon_path = None
+    from ..runtime_identity import configure_app_identity, icon_path
+    from .parameter_form import ParameterForm
+    from .structured_design import ClickableComboBox, DriverParameterForm, StatisticsDesignForm
+
     app = QApplication.instance() or QApplication(sys.argv[:1])
+    app.setStyle("Fusion")
+    # Qt may assign its own Windows AppUserModelID during QApplication setup.
+    # Set the application's stable identity after that setup and before showing windows.
+    identity_result = configure_app_identity()
     ui_family = "Segoe UI"
     ui_font_path = None
     ui_font_source = "platform_default"
-    for font_path in _cjk_font_candidates():
+    for font_path in _ui_font_candidates():
         if font_path.is_file():
             font_id = QFontDatabase.addApplicationFont(str(font_path))
             families = QFontDatabase.applicationFontFamilies(font_id) if font_id >= 0 else []
@@ -161,12 +210,14 @@ def create_window(initial_config: Any = None):
     app.setFont(QFont(ui_family, 11))
     config = resolve_run_config(initial_config) if initial_config is not None else resolve_config({})
     state: dict[str, Any] = {
-        "app": app, "config": config, "font_metadata": {"family": ui_family, "path": ui_font_path,
+        "app": app, "config": config, "app_identity": identity_result,
+        "font_metadata": {"family": ui_family, "path": ui_font_path,
                                                               "source": ui_font_source},
         "records": [], "associated": {}, "qc_result": None,
         "run_future": None, "cancel_event": None, "run_queue": queue.Queue(), "run_id": 0,
         "preview_id": 0, "mapping_preview_snapshot": None, "busy": False, "closed": False, "last_summary": None,
         "project": None, "runtime_session": None, "autosave_dirty": False, "autosave_state": "未配置项目",
+        "compute_configuration_error": _compute_compatibility_error(config),
         "preflight_future": None, "preflight_report": None, "pending_enqueue": None,
         "preflight_cancel_event": None, "preflight_generation": 0, "preflight_context": None,
         "log_export_future": None, "log_export_target": None,
@@ -174,6 +225,7 @@ def create_window(initial_config: Any = None):
         "qc_records_preview_id": None, "qc_records_config_sha256": None,
         "marker_waveform_request_id": 0, "marker_waveform_pending": None,
         "selected_marker_id": None,
+        "log_message_count": 0,
         "last_figures": [], "temp_demo": None, "widget_bindings": [], "template_buttons": {},
         "table_preview": None, "last_loaded_path": None, "executor": ThreadPoolExecutor(max_workers=1, thread_name_prefix="eda-pipeline"),
         "io_executor": ThreadPoolExecutor(max_workers=1, thread_name_prefix="eda-preview"),
@@ -207,51 +259,90 @@ def create_window(initial_config: Any = None):
         except Exception:
             pass
     window.setWindowTitle("EDA Toolkit · 皮肤电研究工作台")
-    window.resize(1420, 920)
-    window.setMinimumSize(1120, 760)
+    screen = app.primaryScreen()
+    available = screen.availableGeometry() if screen is not None else None
+    if available is not None and available.width() > 0 and available.height() > 0:
+        # QScreen geometry is already expressed in Qt logical pixels. Leave
+        # room for native title-bar/frame decoration and keep the whole window
+        # inside the usable work area, including the taskbar inset.
+        width_budget = max(320, int(available.width()) - 24)
+        height_budget = max(320, int(available.height()) - 60)
+        minimum_width = min(1120, width_budget)
+        minimum_height = min(760, height_budget)
+        initial_width = min(1420, width_budget)
+        initial_height = min(920, height_budget)
+        window.setMinimumSize(minimum_width, minimum_height)
+        window.resize(initial_width, initial_height)
+        x = int(available.x()) + max(8, (int(available.width()) - initial_width) // 2)
+        y = int(available.y()) + 8
+        window.move(x, y)
+    else:
+        window.resize(1420, 920)
+        window.setMinimumSize(1120, 760)
     window.setObjectName("mainWindow")
+    combo_arrow_path = str((Path(__file__).resolve().parent.parent / "resources" / "icons" /
+                            "chevron_down.svg").resolve()).replace("\\", "/")
     window.setStyleSheet(f"""
-        QWidget {{ background: #F4F7FA; color: #183247; font-family: '{ui_family}', sans-serif; font-size: 11pt; }}
-        QMainWindow {{ background: #F4F7FA; }}
+        QWidget {{ background: #F3F6FA; color: #22364B; font-family: '{ui_family}', sans-serif; font-size: 10pt; }}
+        QMainWindow {{ background: #F3F6FA; }}
         QLabel {{ background: transparent; }}
-        QLabel#eyebrow {{ color: #087E83; font-size: 10pt; font-weight: 700; letter-spacing: 1px; }}
-        QLabel#pageTitle {{ color: #17324D; font-size: 18pt; font-weight: 700; }}
-        QLabel#subtle {{ color: #5D7182; font-size: 10pt; }}
-        QFrame#header, QGroupBox {{ background: #FFFFFF; border: 1px solid #D8E2EA; border-radius: 9px; }}
+        QLabel#eyebrow {{ color: #2563EB; font-size: 9pt; font-weight: 700; letter-spacing: 1px; }}
+        QLabel#pageTitle {{ color: #142B45; font-size: 18pt; font-weight: 700; }}
+        QLabel#subtle {{ color: #607286; font-size: 9pt; }}
+        QFrame#header, QGroupBox {{ background: #FFFFFF; border: 1px solid #DCE4EE; border-radius: 9px; }}
         QGroupBox {{ margin-top: 12px; padding: 12px 10px 8px 10px; font-weight: 650; }}
-        QGroupBox::title {{ subcontrol-origin: margin; left: 14px; padding: 0 5px; color: #31536B; }}
-        QPushButton {{ background: #FFFFFF; border: 1px solid #C8D6E1; border-radius: 6px; padding: 7px 12px; min-height: 26px; }}
-        QPushButton:hover {{ border-color: #148A8A; background: #EAF6F5; }}
-        QPushButton:pressed {{ background: #D5ECEA; }}
+        QGroupBox::title {{ subcontrol-origin: margin; left: 14px; padding: 0 5px; color: #334C68; }}
+        QPushButton {{ background: #FFFFFF; border: 1px solid #C8D4E1; border-radius: 6px; padding: 7px 12px; min-height: 26px; }}
+        QPushButton:hover {{ border-color: #2563EB; background: #EFF5FF; }}
+        QPushButton:pressed {{ background: #DFEAFF; }}
         QPushButton:disabled {{ color: #8999A5; background: #EDF1F4; }}
-        QPushButton#primary {{ background: #087E83; color: white; border: 1px solid #087E83; font-weight: 700; }}
-        QPushButton#primary:hover {{ background: #076E73; }}
+        QToolButton {{ background: #FFFFFF; border: 1px solid #C8D4E1; border-radius: 6px; padding: 7px 12px; min-height: 26px; }}
+        QToolButton:hover {{ border-color: #2563EB; background: #EFF5FF; }}
+        QToolButton:pressed {{ background: #DFEAFF; }}
+        QToolButton:disabled {{ color: #8999A5; background: #EDF1F4; }}
+        QPushButton#primary {{ background: #2563EB; color: white; border: 1px solid #2563EB; font-weight: 700; }}
+        QPushButton#primary:hover {{ background: #1D4ED8; }}
         QPushButton#danger {{ color: #9A3D39; border-color: #D9A7A3; }}
-        QLineEdit, QPlainTextEdit, QComboBox, QDoubleSpinBox, QSpinBox {{ background: white; border: 1px solid #C8D6E1; border-radius: 5px; padding: 5px 7px; selection-background-color: #148A8A; }}
-        QComboBox {{ min-height: 27px; }}
-        QPlainTextEdit {{ font-family: Consolas, '{ui_family}', monospace; font-size: 10pt; }}
-        QListWidget {{ background: #EAF0F5; border: none; padding: 8px; outline: none; }}
-        QListWidget::item {{ padding: 12px 11px; margin: 3px 0; border-radius: 6px; color: #36566C; }}
-        QListWidget::item:selected {{ background: #D6ECEB; color: #075C60; font-weight: 700; }}
-        QTableWidget {{ background: white; alternate-background-color: #F5F8FA; gridline-color: #E1E8ED; border: 1px solid #D8E2EA; }}
-        QHeaderView::section {{ background: #EAF0F5; color: #35556B; border: 0; padding: 6px; font-weight: 650; }}
+        QLineEdit, QPlainTextEdit, QComboBox, QDoubleSpinBox, QSpinBox {{ background: white; border: 1px solid #C8D4E1; border-radius: 5px; padding: 5px 7px; selection-background-color: #2563EB; }}
+        QComboBox {{ min-height: 28px; padding-right: 22px; }}
+        QComboBox::drop-down {{ width: 23px; border-left: 1px solid #DCE4EE; border-top-right-radius: 5px; border-bottom-right-radius: 5px; background: #F7F9FC; }}
+        QComboBox::down-arrow {{ image: url("{combo_arrow_path}"); width: 10px; height: 10px; }}
+        QComboBox QAbstractItemView {{ background: white; selection-background-color: #E7EFFF; selection-color: #142B45; border: 1px solid #C8D4E1; }}
+        QDoubleSpinBox, QSpinBox {{ max-width: 210px; }}
+        QPlainTextEdit {{ font-family: Consolas, '{ui_family}', monospace; font-size: 9pt; }}
+        QFrame#sidebar {{ background: #142B45; border: none; }}
+        QLabel#sidebarBrand {{ color: #FFFFFF; font-size: 13pt; font-weight: 700; }}
+        QLabel#sidebarCaption {{ color: #AFC1D4; font-size: 9pt; }}
+        QListWidget#sidebarNav {{ background: #142B45; border: none; padding: 8px 6px; outline: none; }}
+        QListWidget#sidebarNav::item {{ padding: 9px 8px; margin: 3px 0; border-radius: 6px; color: #B8C9DB; font-size: 9pt; }}
+        QListWidget#sidebarNav::item:selected {{ background: #2563EB; color: #FFFFFF; font-weight: 700; }}
+        QListWidget#sidebarNav::item:hover:!selected {{ background: #213E5E; color: #FFFFFF; }}
+        QTableWidget {{ background: white; alternate-background-color: #F5F8FC; gridline-color: #E2E8F0; border: 1px solid #DCE4EE; }}
+        QHeaderView::section {{ background: #EEF3F9; color: #334C68; border: 0; padding: 6px; font-weight: 650; }}
         QProgressBar {{ background: #E2E9EE; border: none; border-radius: 5px; text-align: center; min-height: 15px; }}
-        QProgressBar::chunk {{ background: #148A8A; border-radius: 5px; }}
+        QProgressBar::chunk {{ background: #2563EB; border-radius: 5px; }}
         QScrollArea {{ border: none; background: transparent; }}
+        QScrollBar:vertical {{ background: #EDF2F5; width: 12px; margin: 2px; border-radius: 6px; }}
+        QScrollBar::handle:vertical {{ background: #B8C9D4; min-height: 28px; border-radius: 5px; }}
+        QScrollBar::handle:vertical:hover {{ background: #91A9B8; }}
+        QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{ height: 0; }}
+        QScrollBar:horizontal {{ background: #EDF2F5; height: 12px; margin: 2px; border-radius: 6px; }}
+        QScrollBar::handle:horizontal {{ background: #B8C9D4; min-width: 28px; border-radius: 5px; }}
+        QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{ width: 0; }}
     """)
 
     root = QWidget()
     root_layout = QVBoxLayout(root)
-    root_layout.setContentsMargins(16, 14, 16, 12)
-    root_layout.setSpacing(11)
+    root_layout.setContentsMargins(12, 10, 12, 8)
+    root_layout.setSpacing(7)
 
     header = QFrame()
     header.setObjectName("header")
     header_layout = QVBoxLayout(header)
-    header_layout.setContentsMargins(15, 10, 15, 10)
+    header_layout.setContentsMargins(12, 7, 12, 7)
     top_row = QHBoxLayout()
     identity = QVBoxLayout()
-    eyebrow = QLabel("EDA TOOLKIT  /  RESEARCH WORKSPACE")
+    eyebrow = QLabel("EDA TOOLKIT")
     eyebrow.setObjectName("eyebrow")
     title = QLabel("皮肤电研究工作台")
     title.setObjectName("pageTitle")
@@ -261,70 +352,139 @@ def create_window(initial_config: Any = None):
     top_row.addStretch(1)
     preset = QComboBox()
     preset.setObjectName("presetSelector")
-    preset.addItems(list(PRESETS))
-    preset.setCurrentText(config["pipeline_id"])
+    preset_labels = {
+        "single_standard": "单人基础分析",
+        "single_event": "事件相关分析",
+        "single_advanced": "单人扩展分析",
+        "single_driver": "Driver 分解分析",
+        "group_sync": "多人同步分析",
+        "custom": "自定义方案",
+    }
+    for preset_id in PRESETS:
+        preset.addItem(preset_labels[preset_id], preset_id)
+    preset.setCurrentIndex(max(0, preset.findData(config["pipeline_id"])))
     widgets["preset"] = preset
     top_row.addWidget(QLabel("研究预设"))
     top_row.addWidget(preset)
     header_layout.addLayout(top_row)
 
-    actions = QHBoxLayout()
-    actions.addWidget(QLabel("任务"))
-    for key, caption in (("import_config", "导入 JSON"), ("save_config", "保存 JSON"),
-                         ("plan", "计划预览"), ("preflight", "运行前检查"),
-                         ("trial", "单文件预检+入队"), ("batch", "批量预检+入队"),
-                         ("start_queue", "开始队列"), ("cancel", "取消任务")):
+    # Keep button objects as hidden compatibility bridges for existing signal
+    # handlers and automation. User-facing access lives in menus below.
+    action_specs = (
+        ("import_config", "导入设置", "导入完整设置文件（JSON）"),
+        ("save_config", "导出设置", "导出当前控件/已应用设置为 JSON；每次选择保存位置"),
+        ("plan", "计划预览", "查看当前已应用设置对应的运行计划"),
+        ("preflight", "运行前检查", "检查当前设置和项目输入"),
+        ("trial", "单文件预检+入队", "选择单个信号文件，完成运行前检查后入队"),
+        ("batch", "批量预检+入队", "使用当前项目输入完成运行前检查后入队"),
+    )
+    for key, caption, tooltip in action_specs:
         button = QPushButton(caption)
-        button.setObjectName("primary" if key in ("trial", "batch", "start_queue") else "danger" if key == "cancel" else "")
-        if key in ("cancel", "start_queue", "trial", "batch", "preflight"):
+        button.setToolTip(tooltip)
+        button.hide()
+        if key in ("preflight", "trial", "batch"):
             button.setEnabled(False)
-        actions.addWidget(button)
         widgets[key] = button
-    header_layout.addLayout(actions)
+
+    run_row = QHBoxLayout()
+    add_task_button = QToolButton()
+    add_task_button.setText("添加任务…")
+    add_task_button.setMinimumHeight(30)
+    add_task_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+    add_task_menu = QMenu(add_task_button)
+    add_single_action = add_task_menu.addAction("单文件预检并入队…")
+    add_batch_action = add_task_menu.addAction("批量预检并入队")
+    add_task_button.setEnabled(False)
+    add_single_action.setEnabled(False)
+    add_batch_action.setEnabled(False)
+    add_task_button.setMenu(add_task_menu)
+    widgets.update({"add_task_button": add_task_button, "add_task_menu": add_task_menu,
+                    "add_single_task_action": add_single_action,
+                    "add_batch_task_action": add_batch_action})
+    run_row.addWidget(add_task_button)
+    for key, caption in (("start_queue", "开始队列"), ("cancel", "取消任务")):
+        button = QPushButton(caption)
+        button.setMinimumHeight(30)
+        button.setObjectName("primary" if key == "start_queue" else "danger")
+        button.setEnabled(False)
+        if key == "cancel":
+            button.hide()
+        run_row.addWidget(button)
+        widgets[key] = button
+    run_row.addStretch(1)
+    header_layout.addLayout(run_row)
     root_layout.addWidget(header)
 
     body = QSplitter(Qt.Orientation.Horizontal)
+    sidebar = QFrame()
+    sidebar.setObjectName("sidebar")
+    sidebar.setMinimumWidth(190)
+    sidebar.setMaximumWidth(220)
+    sidebar_layout = QVBoxLayout(sidebar)
+    sidebar_layout.setContentsMargins(12, 16, 12, 14)
+    sidebar_layout.setSpacing(8)
+    sidebar_brand = QLabel("EDA Toolkit")
+    sidebar_brand.setObjectName("sidebarBrand")
+    sidebar_caption = QLabel("皮肤电研究工作台")
+    sidebar_caption.setObjectName("sidebarCaption")
+    sidebar_layout.addWidget(sidebar_brand)
+    sidebar_layout.addWidget(sidebar_caption)
+    sidebar_rule = QFrame()
+    sidebar_rule.setFrameShape(QFrame.Shape.HLine)
+    sidebar_rule.setStyleSheet("color: #38536F;")
+    sidebar_layout.addWidget(sidebar_rule)
     navigation = QListWidget()
-    navigation.setFixedWidth(175)
-    navigation.addItems(list(PAGES))
+    navigation.setObjectName("sidebarNav")
+    navigation.addItems([f"{index:02d}   {name}" for index, name in enumerate(PAGES, start=1)])
     navigation.setCurrentRow(0)
+    navigation.setUniformItemSizes(True)
+    sidebar_layout.addWidget(navigation, 1)
+    sidebar_footer = QLabel("配置  ·  处理  ·  结果")
+    sidebar_footer.setObjectName("sidebarCaption")
+    sidebar_layout.addWidget(sidebar_footer)
     stack = QStackedWidget()
     widgets["navigation"] = navigation
     widgets["stack"] = stack
     widgets["pages"] = {}
-    body.addWidget(navigation)
+    body.addWidget(sidebar)
     body.addWidget(stack)
     body.setStretchFactor(0, 0)
     body.setStretchFactor(1, 1)
-    body.setSizes([175, 1200])
+    body.setSizes([204, 1160])
     root_layout.addWidget(body, 1)
 
-    footer = QFrame()
-    footer.setObjectName("header")
-    footer_layout = QVBoxLayout(footer)
-    footer_layout.setContentsMargins(12, 6, 12, 6)
-    progress_row = QHBoxLayout()
     progress = QProgressBar()
     progress.setRange(0, 100)
     progress.setValue(0)
+    progress.setFixedWidth(170)
+    progress.setMaximumHeight(15)
+    progress.setTextVisible(False)
     status = QLabel("就绪 · 参数为研究示例，尚未按设备/任务科学资格验证")
     status.setObjectName("subtle")
-    progress_row.addWidget(progress, 1)
-    progress_row.addWidget(status, 2)
-    footer_layout.addLayout(progress_row)
+    status.setMinimumWidth(0)
+    status_bar = QStatusBar(window)
+    status_bar.setSizeGripEnabled(False)
+    status_bar.setFixedHeight(27)
+    status_bar.addWidget(status, 1)
+    status_bar.addPermanentWidget(progress)
+    window.setStatusBar(status_bar)
+    log_header = QLabel("本次会话暂无消息")
+    log_header.setObjectName("subtle")
     log_box = QPlainTextEdit()
     log_box.setReadOnly(True)
     log_box.setMaximumBlockCount(1200)
-    log_box.setFixedHeight(95)
-    footer_layout.addWidget(log_box)
-    root_layout.addWidget(footer)
+    log_box.setPlaceholderText("本次会话暂无消息。任务进度和错误会显示在这里。")
+    log_box.setFixedHeight(88)
     window.setCentralWidget(root)
     widgets.update({"progress": progress, "status": status, "log": log_box,
+                    "log_header": log_header, "status_bar": status_bar,
                     "header": header, "body": body})
 
     def log(message: Any) -> None:
         stamp = datetime.now().strftime("%H:%M:%S")
         log_box.appendPlainText(f"{stamp}  {message}")
+        state["log_message_count"] += 1
+        log_header.setText(f"本次会话 · {state['log_message_count']} 条消息")
         session = state.get("runtime_session")
         if session and callable(session.get("event_sink")):
             try:
@@ -468,8 +628,8 @@ def create_window(initial_config: Any = None):
         page = QWidget()
         layout = QVBoxLayout(page)
         layout.setSizeConstraint(QLayout.SizeConstraint.SetMinimumSize)
-        layout.setContentsMargins(18, 16, 18, 18)
-        layout.setSpacing(12)
+        layout.setContentsMargins(14, 12, 14, 14)
+        layout.setSpacing(9)
         heading = QLabel(name)
         heading.setObjectName("pageTitle")
         layout.addWidget(heading)
@@ -563,10 +723,19 @@ def create_window(initial_config: Any = None):
                 control.setText(",".join(map(str, value)))
             control.blockSignals(False)
         preset.blockSignals(True)
-        preset.setCurrentText(state["config"]["pipeline_id"])
+        preset.setCurrentIndex(max(0, preset.findData(state["config"]["pipeline_id"])))
         preset.blockSignals(False)
         if "output_directory" in widgets:
             widgets["output_directory"].setText(str(state["config"]["output"]["directory"]))
+        if "compute_workers" in widgets:
+            widgets["compute_workers"].blockSignals(True)
+            widgets["compute_workers"].setValue(int(state["config"]["compute"]["workers"]))
+            widgets["compute_workers"].blockSignals(False)
+        if "compute_backend" in widgets:
+            backend_box = widgets["compute_backend"]
+            backend_box.blockSignals(True)
+            backend_box.setCurrentIndex(max(0, backend_box.findData(state["config"]["compute"]["backend"])))
+            backend_box.blockSignals(False)
         if "baseline_edit" in widgets:
             baseline = state["config"]["preprocess"].get("baseline")
             widgets["baseline_edit"].setText(",".join(map(str, baseline)) if baseline else "")
@@ -574,8 +743,14 @@ def create_window(initial_config: Any = None):
             refresh_feature_selector()
         if "extended_parameter_editors" in widgets:
             refresh_extended_parameter_editors()
-        if "statistics_designs" in widgets:
-            widgets["statistics_designs"].setPlainText(json.dumps(state["config"]["statistics"].get("designs", []), ensure_ascii=False, indent=2))
+        if "driver_parameters" in widgets:
+            widgets["driver_parameters"].set_config(state["config"]["decomposition"]["driver"])
+        if "statistics_designs_layout" in widgets:
+            refresh_statistics_forms()
+        if "preprocess_reference_labels" in widgets:
+            refresh_preprocess_references()
+        if "workbook_status_table" in widgets:
+            refresh_workbook_status_table(state.get("workbook_statuses"))
         if "mapping_unit" in widgets:
             unit = state["config"]["mapping"].get("eda_unit")
             widgets["mapping_unit"].setCurrentIndex(max(0, widgets["mapping_unit"].findData(unit)))
@@ -596,9 +771,16 @@ def create_window(initial_config: Any = None):
             log(f"{source}未应用：{_format_error(error)}")
             QMessageBox.warning(window, "配置校验未通过", _format_error(error))
             return False
+        if (resolved["compute"].get("backend") == "gpu" and
+                resolved["decomposition"].get("method") != "bateman_sparse"):
+            detail = "GPU 后端仅支持 bateman_sparse。请修改计算后端或分解方法；系统不会自动切换算法。"
+            QMessageBox.warning(window, "计算后端与方法不兼容", detail)
+            log(f"{source}未应用：{detail}")
+            return False
         invalidate_mapping_preview()
         state["config"] = resolved
         refresh_bound_controls()
+        refresh_compute_guard()
         set_status(f"{source}已校验 · {resolved['pipeline_id']}")
         log(f"已应用完整配置：{source}")
         return True
@@ -617,14 +799,19 @@ def create_window(initial_config: Any = None):
             state["last_loaded_path"] = filename
 
     def save_config_action() -> None:
+        focused = QApplication.focusWidget()
+        if focused is not None:
+            focused.clearFocus()
+            app.processEvents()
         try:
-            candidate = resolve_run_config(parse_json_text(widgets["config_json"].toPlainText()))
+            # Statistics cards are the authoritative editor; gather them before
+            # export so a valid form edit cannot be lost behind stale state.
+            candidate = resolve_run_config(config_with_analysis_forms())
         except Exception as error:
-            QMessageBox.warning(window, "无法保存无效配置", _format_error(error))
+            QMessageBox.warning(window, "无法导出当前设置", _format_error(error))
             return
-        filename = widgets["config_path"].text().strip()
-        if not filename:
-            filename, _ = QFileDialog.getSaveFileName(window, "保存配置 JSON", "eda-config.json", "JSON (*.json)")
+        filename, _ = QFileDialog.getSaveFileName(
+            window, "导出设置为 JSON", "eda-settings.json", "JSON (*.json)")
         if not filename:
             return
         try:
@@ -647,7 +834,7 @@ def create_window(initial_config: Any = None):
 
     def show_plan() -> None:
         try:
-            resolved = resolve_run_config(parse_json_text(widgets["config_json"].toPlainText()))
+            resolved = resolve_run_config(config_with_analysis_forms())
             caps = get_capabilities(_resolved_output_directory(resolved))
             state["capabilities"] = caps
             caps_label.setText(_capability_summary(caps))
@@ -767,6 +954,7 @@ def create_window(initial_config: Any = None):
         if cancel_event is not None:
             cancel_event.set()
         widgets["cancel"].setEnabled(False)
+        widgets["cancel"].hide()
         state["pending_enqueue"] = None
         state["preflight_report"] = None
         if future.done():
@@ -774,6 +962,7 @@ def create_window(initial_config: Any = None):
             state["preflight_context"] = None
             state["preflight_cancel_event"] = None
             widgets["cancel"].setEnabled(False)
+            widgets["cancel"].hide()
         set_progress(0, f"运行前检查已取消/过期：{reason} · 未入队、未启动分析")
         task_status_label.setText(f"运行前检查已取消/过期：{reason}；请按当前项目状态重新检查。")
         log(f"丢弃运行前检查 generation：{reason}")
@@ -923,10 +1112,7 @@ def create_window(initial_config: Any = None):
                 state["refresh_markers"]()
             if state.get("refresh_tasks"):
                 state["refresh_tasks"]()
-            widgets["trial"].setEnabled(True)
-            widgets["batch"].setEnabled(True)
-            widgets["preflight"].setEnabled(True)
-            widgets["start_queue"].setEnabled(True)
+            refresh_compute_guard()
             set_status(f"项目已打开 · {Path(path).name} · 队列需显式启动")
             log(f"已打开项目：{project_handle['path']} · 恢复状态 {state['task_reconciliation'].get('status', 'not_checked')}")
             return True
@@ -1001,60 +1187,166 @@ def create_window(initial_config: Any = None):
     demo_button.clicked.connect(load_demo)
     caps = get_capabilities(_resolved_output_directory(state["config"]))
     state["capabilities"] = caps
-    capabilities_group = QGroupBox("本机能力与方法状态")
-    capabilities_layout = QVBoxLayout(capabilities_group)
     caps_label = QLabel(_capability_summary(caps))
     caps_label.setWordWrap(True)
     caps_label.setObjectName("subtle")
+    caps_label.hide()
     widgets["capabilities_label"] = caps_label
-    capabilities_layout.addWidget(caps_label)
-    put_content_before_stretch(project_layout, capabilities_group)
+    environment_button = QPushButton("环境监测")
+    environment_button.setObjectName("environmentCheckButton")
+    environment_button.setToolTip("手动刷新本机依赖、GPU 与方法状态；可从弹窗查看和安装缺少的运行依赖。")
+    environment_button.setMinimumHeight(34)
+    widgets["environment_check_button"] = environment_button
 
-    json_group = QGroupBox("完整配置 JSON · 高级编辑")
-    json_layout = QVBoxLayout(json_group)
-    json_hint = QLabel("可以编辑完整配置；点击“校验并应用”后，所有字段先经 resolve_config 校验再同步到控件。未知键、非法单位和 formula 字段都会被拒绝。保存保留当前完整配置。")
-    json_hint.setWordWrap(True)
-    json_hint.setObjectName("subtle")
-    json_layout.addWidget(json_hint)
+    compute_group = QGroupBox("计算资源")
+    compute_form = QFormLayout(compute_group)
+    compute_workers = QSpinBox()
+    compute_workers.setObjectName("computeWorkers")
+    compute_workers.setRange(1, 32)
+    compute_workers.setSuffix(" 个")
+    compute_workers.setValue(int(config["compute"]["workers"]))
+    compute_workers.setToolTip("同时处理的记录数；运行时按待处理记录数限制实际并行数（1–32）。")
+    compute_backend = QComboBox()
+    compute_backend.setObjectName("computeBackend")
+    compute_backend.addItem("CPU", "cpu")
+    compute_backend.addItem("GPU · 仅 bateman_sparse", "gpu")
+    compute_backend.setCurrentIndex(max(0, compute_backend.findData(config["compute"]["backend"])))
+    compute_backend.setToolTip("GPU 后端只支持 bateman_sparse；选择其他方法会被界面阻止，不会自动换算法。")
+    compute_status_note = QLabel("并行数会写入当前计算配置。GPU 仅支持 bateman_sparse；依赖状态可在“环境监测”中手动刷新。")
+    compute_status_note.setObjectName("subtle")
+    compute_status_note.setWordWrap(True)
+    compute_form.addRow("并行记录数 (workers)", compute_workers)
+    compute_form.addRow("计算后端", compute_backend)
+    compute_form.addRow("说明", compute_status_note)
+    widgets.update({"compute_workers": compute_workers, "compute_backend": compute_backend,
+                    "compute_status_note": compute_status_note})
+
+    def update_compute_workers(value: int) -> None:
+        if state["busy"]:
+            return
+        state["config"]["compute"]["workers"] = int(value)
+        update_config_editor()
+
+    def update_compute_backend(_index: int = -1) -> None:
+        if state["busy"]:
+            return
+        selected = compute_backend.currentData()
+        if selected == "gpu" and state["config"]["decomposition"].get("method") != "bateman_sparse":
+            compute_backend.blockSignals(True)
+            compute_backend.setCurrentIndex(compute_backend.findData(state["config"]["compute"]["backend"]))
+            compute_backend.blockSignals(False)
+            QMessageBox.warning(window, "GPU 后端不可用于当前方法",
+                                "GPU 仅支持 bateman_sparse。请先选择 bateman_sparse，再设置 GPU；不会自动切换分解方法。")
+            return
+        state["config"]["compute"]["backend"] = str(selected)
+        refresh_compute_guard()
+        update_config_editor()
+
+    def refresh_compute_guard() -> None:
+        error = _compute_compatibility_error(state["config"])
+        state["compute_configuration_error"] = error
+        if error:
+            compute_status_note.setText(error)
+            compute_status_note.setStyleSheet("color: #9A3D39; font-weight: 600;")
+        else:
+            compute_status_note.setText(
+                "并行数会写入当前计算配置。GPU 仅支持 bateman_sparse；依赖状态可在“环境监测”中手动刷新。")
+            compute_status_note.setStyleSheet("")
+        allowed = error is None and state.get("project") is not None and not state.get("busy", False)
+        for key in ("preflight", "trial", "batch", "start_queue", "add_task_button",
+                    "add_single_task_action", "add_batch_task_action", "task_single_action",
+                    "task_batch_action", "preflight_action"):
+            action = widgets.get(key)
+            if action is not None:
+                action.setEnabled(allowed)
+
+    compute_workers.valueChanged.connect(update_compute_workers)
+    compute_backend.currentIndexChanged.connect(update_compute_backend)
+    refresh_compute_guard()
+
+    def open_environment_dialog() -> None:
+        dialog = state.get("environment_dialog")
+        if dialog is not None and dialog.isVisible():
+            dialog.raise_()
+            dialog.activateWindow()
+            return
+        from .environment_dialog import EnvironmentDialog
+
+        config_snapshot = copy.deepcopy(state["config"])
+
+        def environment_updated(snapshot: dict[str, Any]) -> None:
+            state["environment_status"] = copy.deepcopy(snapshot)
+            refreshed_caps = snapshot.get("capabilities")
+            if isinstance(refreshed_caps, dict) and "probe_error" not in refreshed_caps:
+                state["capabilities"] = refreshed_caps
+                caps_label.setText(_capability_summary(refreshed_caps))
+            gpu = snapshot.get("gpu", {}) if isinstance(snapshot, dict) else {}
+            readiness = gpu.get("readiness", gpu.get("status", "已探测")) if isinstance(gpu, dict) else "已探测"
+            if state.get("compute_configuration_error"):
+                refresh_compute_guard()
+            else:
+                compute_status_note.setText(
+                    f"GPU 环境：{readiness}。GPU 仅支持 bateman_sparse，不会自动切换算法。")
+
+        dialog = EnvironmentDialog(
+            window,
+            capability_provider=lambda: get_capabilities(_resolved_output_directory(config_snapshot)),
+            on_status_changed=environment_updated)
+        state["environment_dialog"] = dialog
+        dialog.finished.connect(lambda *_: state.update(environment_dialog=None))
+        dialog.open()
+
+    environment_button.clicked.connect(open_environment_dialog)
+    put_content_before_stretch(project_layout, environment_button)
+    put_content_before_stretch(project_layout, compute_group)
+
+    # Retain hidden mirrors as compatibility handles for older integrations.
+    # They are deliberately not placed in the project page or used as config input.
+    json_toggle = QPushButton("高级 JSON 编辑已移除")
+    json_toggle.hide()
+    widgets["json_toggle"] = json_toggle
+    json_group = QGroupBox("高级 JSON 编辑已移除")
+    json_group.hide()
+    widgets["json_group"] = json_group
     config_json = QPlainTextEdit()
     config_json.setObjectName("configJson")
     config_json.setPlainText(_safe_config_text(config))
-    config_json.setMinimumHeight(350)
+    config_json.hide()
     widgets["config_json"] = config_json
-    json_layout.addWidget(config_json)
-    json_buttons = QHBoxLayout()
     apply_json_button = QPushButton("校验并应用 JSON")
+    apply_json_button.hide()
     widgets["apply_json"] = apply_json_button
-    json_buttons.addWidget(apply_json_button)
-    json_buttons.addStretch(1)
-    json_layout.addLayout(json_buttons)
     apply_json_button.clicked.connect(apply_json_editor)
 
-    def on_config_editor_changed(*_args: Any) -> None:
-        future = state.get("preflight_future")
-        context = state.get("preflight_context")
-        if future is None or future.done() or not isinstance(context, dict):
-            return
-        try:
-            current_editor_config = resolve_run_config(parse_json_text(config_json.toPlainText()))
-            current_hash = canonical_config_sha256(current_editor_config)
-        except Exception:
-            current_hash = None
-        if current_hash != context.get("editor_config_sha256"):
-            invalidate_preflight("配置编辑器内容已改变")
-
-    config_json.textChanged.connect(on_config_editor_changed)
-
-    put_content_before_stretch(project_layout, json_group)
-
     # ── 九类 core_io 模板与真实列映射 ─────────────────────────────────────
-    import_page, import_layout = add_page("导入与映射", "模板动作通过 core_io；原始表格不由界面自行解析。未知 EDA 单位保持未声明，必须由操作者明确选择。")
-    template_group = QGroupBox("模板与表格")
+    import_page, import_layout = add_page("导入与映射", "下载一个工作簿，填写信号和研究信息后导入检查完整性。电导单位需要明确选择。")
+    template_group = QGroupBox("单工作簿输入")
     template_layout = QVBoxLayout(template_group)
-    template_info = QLabel("每类都提供查看、下载、导入。示例文件明确标记 SYNTHETIC_ONLY。导入仅绑定路径并展示有行数上限的预览；pipeline 会再次执行完整 schema 与跨表校验。")
+    template_info = QLabel("使用一个 Excel 工作簿查看全部九类表格。导入时按工作表、字段和行列检查必填数据；运行前检查仍会执行完整跨表校验。")
     template_info.setWordWrap(True)
     template_info.setObjectName("subtle")
     template_layout.addWidget(template_info)
+    workbook_toolbar = QHBoxLayout()
+    download_workbook_button = QPushButton("下载 Excel 工作簿")
+    download_workbook_button.setObjectName("primary")
+    import_workbook_button = QPushButton("导入并校验工作簿…")
+    workbook_toolbar.addWidget(download_workbook_button)
+    workbook_toolbar.addWidget(import_workbook_button)
+    workbook_toolbar.addStretch(1)
+    template_layout.addLayout(workbook_toolbar)
+    workbook_status_table = QTableWidget(0, 4)
+    workbook_status_table.setObjectName("workbookStatusTable")
+    workbook_status_table.setHorizontalHeaderLabels(["表名", "要求", "填写状态", "缺失项 / 错误"])
+    workbook_status_table.verticalHeader().setVisible(False)
+    workbook_status_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+    workbook_status_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+    workbook_status_table.setAlternatingRowColors(True)
+    workbook_status_table.setMaximumHeight(290)
+    workbook_status_table.horizontalHeader().setStretchLastSection(True)
+    template_layout.addWidget(workbook_status_table)
+    widgets.update({"download_workbook": download_workbook_button,
+                    "import_workbook": import_workbook_button,
+                    "workbook_status_table": workbook_status_table})
     template_container = QWidget()
     template_grid = QGridLayout(template_container)
     template_grid.setContentsMargins(0, 0, 0, 0)
@@ -1148,6 +1440,7 @@ def create_window(initial_config: Any = None):
     template_scroll.setWidgetResizable(True)
     template_scroll.setMinimumHeight(340)
     template_scroll.setWidget(template_container)
+    template_scroll.hide()
     template_layout.addWidget(template_scroll)
     put_content_before_stretch(import_layout, template_group)
 
@@ -1162,6 +1455,117 @@ def create_window(initial_config: Any = None):
     preview_layout.addWidget(preview_title)
     preview_layout.addWidget(preview_host)
     widgets.update({"preview_title": preview_title, "preview_host": preview_host})
+
+    def refresh_workbook_status_table(statuses: dict[str, Any] | None = None) -> None:
+        from .workbook import table_requirements
+
+        table = widgets["workbook_status_table"]
+        requirements = table_requirements(state["config"])
+        status_map = statuses or {}
+        table.setRowCount(len(template_meta))
+        table.setColumnCount(4)
+        table.setHorizontalHeaderLabels(["表名", "要求", "填写状态", "缺失项 / 错误"])
+        table_name_map = {item["name"]: item for item in template_meta}
+        for row, table_id in enumerate(table_name_map):
+            template = table_name_map[table_id]
+            requirement = requirements.get(table_id, {})
+            detail = status_map.get(table_id, {})
+            input_key = requirement.get("input_key", table_id)
+            bound_value = state["config"]["input"].get(input_key)
+            bound = bool(bound_value)
+            required = bool(requirement.get("required_by_config", detail.get("required_by_config", False)))
+            if table_id in ("signals", "input_manifest"):
+                signal_source_missing = not bool(state["config"]["input"].get("signals") or
+                                                 state["config"]["input"].get("manifest"))
+                required = signal_source_missing
+                requirement_text = "至少一种信号来源必需" if signal_source_missing else "信号来源（二选一）"
+            else:
+                requirement_text = "必需" if required else "可选"
+            raw_status = detail.get("status")
+            labels = {"complete": "已填写", "invalid": "有错误", "missing_required": "缺少必填字段",
+                      "optional_empty": "可选，未填写", "not_provided": "未提供"}
+            if raw_status:
+                completion = labels.get(str(raw_status), str(raw_status))
+            elif bound:
+                completion = "已绑定 · 待预检"
+            else:
+                completion = "缺失" if required else "未填写"
+            missing = [str(value) for value in detail.get("missing_fields", [])]
+            errors = detail.get("errors", [])
+            diagnostics = []
+            for error in errors:
+                location = ""
+                if error.get("sheet") or error.get("table"):
+                    location += str(error.get("sheet", error.get("table")))
+                if error.get("row") is not None:
+                    location += f" 第 {error['row']} 行"
+                if error.get("column"):
+                    location += f"「{error['column']}」"
+                diagnostics.append((location + "：" if location else "") + str(error.get("message", error.get("code", "导入错误"))))
+            missing_text = "、".join(missing + diagnostics)
+            if not missing_text and raw_status == "complete":
+                missing_text = "无"
+            if not missing_text and not bound and required:
+                required_fields = requirement.get("required_fields", [])
+                missing_text = "尚未提供工作表" + (f"；需填：{'、'.join(map(str, required_fields))}" if required_fields else "")
+            values = (detail.get("sheet_name", requirement.get("sheet_name", template["display_name"])),
+                      requirement_text, completion, missing_text)
+            for column, value in enumerate(values):
+                cell = QTableWidgetItem(str(value))
+                if column == 3 and (diagnostics or missing):
+                    cell.setToolTip("\n".join(diagnostics + ([f"缺少字段：{'、'.join(missing)}"] if missing else [])))
+                table.setItem(row, column, cell)
+        table.resizeColumnsToContents()
+        table.setColumnWidth(0, 140)
+        table.setColumnWidth(1, 190)
+        table.setColumnWidth(2, 150)
+        table.horizontalHeader().setStretchLastSection(True)
+
+    def download_workbook() -> None:
+        from .workbook import export_workbook
+
+        target, _ = QFileDialog.getSaveFileName(window, "下载 Excel 工作簿", "eda_input_workbook.xlsx",
+                                                "Excel 工作簿 (*.xlsx)")
+        if not target:
+            return
+        try:
+            exported = export_workbook(target)
+            set_status(f"工作簿已导出：{Path(exported).name}")
+            log(f"已导出九表工作簿：{exported}")
+        except Exception as error:
+            QMessageBox.critical(window, "工作簿导出失败", _format_error(error))
+
+    def import_workbook_file() -> None:
+        from .workbook import import_workbook
+
+        filename, _ = QFileDialog.getOpenFileName(window, "导入 Excel 工作簿", "", "Excel 工作簿 (*.xlsx)")
+        if not filename:
+            return
+        destination = state["project"]["path"] if state.get("project") else str(Path(filename).resolve().parent)
+        try:
+            result = import_workbook(filename, destination, config=state["config"])
+            candidate = copy.deepcopy(state["config"])
+            candidate["input"] = copy.deepcopy(result["bindings"])
+            if result.get("statistics_designs") is not None:
+                candidate["statistics"]["designs"] = copy.deepcopy(result["statistics_designs"])
+            if not apply_config(candidate, source=f"工作簿 {Path(filename).name}"):
+                return
+            state["workbook_statuses"] = copy.deepcopy(result["statuses"])
+            refresh_workbook_status_table(state["workbook_statuses"])
+            invalid = sum(1 for item in result["statuses"].values() if item.get("status") != "complete")
+            set_status(f"工作簿已导入 · {len(result['statuses']) - invalid}/{len(result['statuses'])} 张表完整")
+            log(f"已导入工作簿并检查 {len(result['statuses'])} 张表：{filename}")
+            error_count = sum(len(item.get("errors", [])) for item in result["statuses"].values())
+            if error_count:
+                QMessageBox.warning(window, "工作簿存在待修正内容",
+                                    f"发现 {error_count} 项工作表错误。请查看表格中的行、列和缺失字段，再运行前完整检查。")
+        except Exception as error:
+            QMessageBox.critical(window, "工作簿导入失败", _format_error(error))
+
+    download_workbook_button.clicked.connect(download_workbook)
+    import_workbook_button.clicked.connect(import_workbook_file)
+    state["workbook_statuses"] = {}
+    refresh_workbook_status_table()
     put_content_before_stretch(import_layout, preview_group)
 
     mapping_group = QGroupBox("信号列映射与实际读取预览")
@@ -1596,7 +2000,7 @@ def create_window(initial_config: Any = None):
     refresh_audit_table()
 
     # ── 数值参数：控件直连完整配置，不另造运行路径 ─────────────────────────
-    preprocess_page, preprocess_layout = add_page("预处理", "所有操作写入完整 preprocess 配置；clean_uS 保留物理 μS，派生缩放仅是单独分析分支。")
+    preprocess_page, preprocess_layout = add_page("预处理", "设置缺口处理、平滑、滤波和时间网格。清洁后的信号保留 μS；缩放结果作为单独分析分支保存。")
     preprocess_group = QGroupBox("缺口、平滑、滤波与时间网格")
     pp_form = QFormLayout(preprocess_group)
 
@@ -1609,44 +2013,108 @@ def create_window(initial_config: Any = None):
         return box
 
     gap_spin = spin_box(config["preprocess"]["interpolate_max_gap_s"], 0, 3600, 0.1, 3)
-    pp_form.addRow("仅短缺口插值上限 (s；0=禁用)", gap_spin)
+    preprocess_reference_labels: dict[str, QLabel] = {}
+
+    def add_preprocess_field(label: str, key: str, control: QWidget) -> None:
+        reference = QLabel()
+        reference.setObjectName("subtle")
+        reference.setMinimumWidth(180)
+        reference.setWordWrap(True)
+        holder = QWidget()
+        row = QHBoxLayout(holder)
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(10)
+        row.addWidget(control)
+        row.addWidget(reference, 1)
+        pp_form.addRow(label, holder)
+        preprocess_reference_labels[key] = reference
+
+    def _reference_text(key: str, value: Any) -> str:
+        if key in ("interpolation", "smoothing", "scaling"):
+            labels = {"linear": "线性", "pchip": "保形插值", "none": "关闭", "moving": "滑动平均",
+                      "median": "中位数平滑", "zscore": "Z 分数", "range": "范围缩放", "log": "对数缩放"}
+            return labels.get(str(value), str(value))
+        if value is None:
+            return "关闭（0）" if key in ("lowpass_hz", "resample_hz") else "未设置"
+        if isinstance(value, list):
+            return "未设置" if not value else f"{value[0]}–{value[1]} s"
+        units = {"interpolate_max_gap_s": " s", "smoothing_window_s": " s", "lowpass_hz": " Hz",
+                 "resample_hz": " Hz", "min_segment_duration_s": " s", "filter_order": " 阶"}
+        return f"{value:g}{units.get(key, '')}" if isinstance(value, (int, float)) else str(value)
+
+    def refresh_preprocess_references() -> None:
+        reference = get_preset(state["config"]["pipeline_id"])["preprocess"]
+        for field, label_widget in preprocess_reference_labels.items():
+            action = {
+                "interpolate_max_gap_s": "短缺口插值上限",
+                "interpolation": "插值方式",
+                "smoothing": "平滑方式",
+                "smoothing_window_s": "平滑窗口",
+                "lowpass_hz": "低通截止；需低于 Nyquist 频率",
+                "resample_hz": "目标采样率",
+                "edge_tolerance": "settling 边缘容差",
+                "min_segment_duration_s": "最短处理段",
+                "jitter_tolerance": "采样间隔相对抖动上限",
+                "baseline": "固定基线区间",
+                "scaling": "独立缩放分支",
+                "filter_order": "低通滤波阶数",
+            }[field]
+            label_widget.setText(f"方案参考 · {action}：{_reference_text(field, reference.get(field))}")
+
+    add_preprocess_field("仅短缺口插值上限 (s；0=禁用)", "interpolate_max_gap_s", gap_spin)
     bind_value("preprocess.interpolate_max_gap_s", gap_spin, float)
-    interpolation_box = QComboBox()
-    interpolation_box.addItems(["linear", "pchip"])
-    interpolation_box.setCurrentText(config["preprocess"]["interpolation"])
-    pp_form.addRow("插值方法（不外推）", interpolation_box)
+    interpolation_box = ClickableComboBox()
+    interpolation_box.addItem("线性插值", "linear")
+    interpolation_box.addItem("PCHIP 保形插值", "pchip")
+    interpolation_box.setCurrentIndex(interpolation_box.findData(config["preprocess"]["interpolation"]))
+    add_preprocess_field("插值方法（不外推）", "interpolation", interpolation_box)
     bind_value("preprocess.interpolation", interpolation_box)
-    smoothing_box = QComboBox()
-    smoothing_box.addItems(["none", "moving", "median"])
-    smoothing_box.setCurrentText(config["preprocess"]["smoothing"])
-    pp_form.addRow("平滑方法", smoothing_box)
+    smoothing_box = ClickableComboBox()
+    smoothing_box.addItem("不平滑", "none")
+    smoothing_box.addItem("滑动平均", "moving")
+    smoothing_box.addItem("中位数平滑", "median")
+    smoothing_box.setCurrentIndex(smoothing_box.findData(config["preprocess"]["smoothing"]))
+    add_preprocess_field("平滑方法", "smoothing", smoothing_box)
     bind_value("preprocess.smoothing", smoothing_box)
     for key, label, maximum in (("smoothing_window_s", "平滑窗口 (s)", 3600),
                                 ("lowpass_hz", "低通截止 (Hz；0=关闭)", 100000),
                                 ("resample_hz", "重采样目标 (Hz；0=关闭)", 100000),
                                 ("edge_tolerance", "边缘容差（相对 settling 幅值）", 0.1),
                                 ("min_segment_duration_s", "最短处理段 (s)", 86400),
-                                ("jitter_tolerance", "单段采样间隔相对抖动上限", 0.5)):
+                                ("jitter_tolerance", "单段采样间隔相对抖动上限", 0.5),
+                                ("filter_order", "低通滤波阶数", 12)):
         value = config["preprocess"][key]
-        box = spin_box(value, 0, maximum, 0.01 if key not in ("min_segment_duration_s",) else 1,
+        if key == "filter_order":
+            box = QSpinBox()
+            box.setRange(1, int(maximum))
+            box.setValue(int(value))
+            box.setMaximumWidth(210)
+        else:
+            box = spin_box(value, 0, maximum, 0.01 if key not in ("min_segment_duration_s",) else 1,
                        6 if key in ("edge_tolerance", "jitter_tolerance") else 3)
-        pp_form.addRow(label, box)
+        add_preprocess_field(label, key, box)
         cast = (lambda v: None if float(v) <= 0 else float(v)) if key in ("lowpass_hz", "resample_hz") else float
-        bind_value(f"preprocess.{key}", box, cast, nullable=key in ("lowpass_hz", "resample_hz"))
+        bind_value(f"preprocess.{key}", box, int if key == "filter_order" else cast,
+                   nullable=key in ("lowpass_hz", "resample_hz"))
     baseline_edit = QLineEdit("")
     widgets["baseline_edit"] = baseline_edit
     baseline_edit.setPlaceholderText("留空或填 start,end（秒）；按该区间清洁样本均值减基线")
     baseline_edit.setText(",".join(map(str, config["preprocess"]["baseline"])) if config["preprocess"]["baseline"] else "")
-    pp_form.addRow("固定基线区间 (s)", baseline_edit)
-    scaling_box = QComboBox()
-    scaling_box.addItems(["none", "zscore", "range", "log"])
-    scaling_box.setCurrentText(config["preprocess"]["scaling"])
-    pp_form.addRow("独立缩放分支", scaling_box)
+    add_preprocess_field("固定基线区间 (s)", "baseline", baseline_edit)
+    scaling_box = ClickableComboBox()
+    scaling_box.addItem("不缩放", "none")
+    scaling_box.addItem("Z 分数", "zscore")
+    scaling_box.addItem("范围缩放", "range")
+    scaling_box.addItem("对数缩放", "log")
+    scaling_box.setCurrentIndex(scaling_box.findData(config["preprocess"]["scaling"]))
+    add_preprocess_field("独立缩放分支", "scaling", scaling_box)
     bind_value("preprocess.scaling", scaling_box)
     baseline_hint = QLabel("滤波 cutoff 必须低于 Nyquist；QC 连续段会分别处理。边缘影响由冲激/settling 与保守边缘半径标出。非均匀时间若超过 jitter 上限会拒绝统一采样假设。")
     baseline_hint.setWordWrap(True)
     baseline_hint.setObjectName("subtle")
     pp_form.addRow("处理边界", baseline_hint)
+    widgets["preprocess_reference_labels"] = preprocess_reference_labels
+    refresh_preprocess_references()
     put_content_before_stretch(preprocess_layout, preprocess_group)
 
     def update_baseline() -> None:
@@ -1667,7 +2135,6 @@ def create_window(initial_config: Any = None):
         baseline_edit.setStyleSheet("")
 
     baseline_edit.editingFinished.connect(update_baseline)
-    scaling_box.currentIndexChanged.connect(lambda *_: (state["config"]["preprocess"].update(scaling=scaling_box.currentData() or scaling_box.currentText()), update_config_editor()))
 
     analysis_page, analysis_layout = add_page("分解与 SCR", "支持独立滤波和非负 Bateman Driver 分解；SCR 使用 trough-to-peak 检测。方法与阈值尚需设备或任务验证。")
     decomposition_group = QGroupBox("信号分解")
@@ -1701,6 +2168,14 @@ def create_window(initial_config: Any = None):
             value = control.isChecked() if isinstance(control, QCheckBox) else control.value() if hasattr(control, "value") else control.currentData()
             if value is None and hasattr(control, "currentText"):
                 value = control.currentText()
+            if (section == "decomposition" and field == "method" and
+                    state["config"]["compute"].get("backend") == "gpu" and value != "bateman_sparse"):
+                control.blockSignals(True)
+                control.setCurrentIndex(control.findData(state["config"][section][field]))
+                control.blockSignals(False)
+                QMessageBox.warning(window, "GPU 后端不可用于当前方法",
+                                    "当前计算后端为 GPU，且 GPU 仅支持 bateman_sparse。请先切换到 CPU，再选择其他方法。")
+                return
             if section == "decomposition" and field == "method" and value != "bateman_sparse":
                 from ..metrics_driver import DRIVER_IDS
                 if DRIVER_IDS.intersection(state["config"]["features"].get("ids", [])):
@@ -1710,6 +2185,8 @@ def create_window(initial_config: Any = None):
                     QMessageBox.warning(window, "仍有 Driver 指标被选中", "请先取消选择 Driver 指标，再切换分解方法。")
                     return
             state["config"][section][field] = transform(value) if transform else value
+            if section == "decomposition" and field == "method":
+                refresh_compute_guard()
             update_config_editor()
             if section == "decomposition" and field == "method" and "feature_registry_table" in widgets:
                 refresh_feature_selector()
@@ -1720,9 +2197,8 @@ def create_window(initial_config: Any = None):
     bind_section_control("decomposition", "cutoff_hz", cutoff_spin, transform=float)
     bind_section_control("decomposition", "order", order_spin, transform=int)
 
-    driver_editor = QPlainTextEdit(json.dumps(config["decomposition"]["driver"], ensure_ascii=False, indent=2))
+    driver_editor = DriverParameterForm(config["decomposition"]["driver"])
     driver_editor.setObjectName("driverParameters")
-    driver_editor.setMaximumHeight(180)
     driver_apply = QPushButton("校验并应用 Driver 参数")
     decomp_form.addRow("Bateman driver 参数", driver_editor)
     decomp_form.addRow("", driver_apply)
@@ -1731,7 +2207,7 @@ def create_window(initial_config: Any = None):
     def apply_driver_parameters() -> None:
         try:
             candidate = copy.deepcopy(state["config"])
-            candidate["decomposition"]["driver"] = parse_json_text(driver_editor.toPlainText())
+            candidate = config_with_analysis_forms()
             apply_config(candidate, source="Driver 参数")
         except Exception as error:
             QMessageBox.warning(window, "Driver 参数无效", _format_error(error))
@@ -1744,6 +2220,15 @@ def create_window(initial_config: Any = None):
     exclude_auto_check.setChecked(config["qc"]["exclude_auto"])
     qc_parameter_form.addRow("自动候选", exclude_auto_check)
     bind_section_control("qc", "exclude_auto", exclude_auto_check, transform=bool)
+    qc_references = {
+        "min_uS": ("文献示例 0.05 μS", "低于此电导值的样本会成为自动质量候选；0 表示关闭。"),
+        "max_uS": ("文献设备上限示例 60 μS", "高于此电导值的样本会成为自动质量候选；0 表示关闭。"),
+        "max_slope_uS_s": ("文献示例 10 μS/s", "超过此变化速率的样本会成为自动质量候选；0 表示关闭。"),
+        "max_jump_uS": ("程序参考：关闭", "相邻样本变化超过此阈值时标记候选；0 表示关闭。"),
+        "flatline_duration_s": ("程序参考：5 s", "变化范围不超过平线容差且持续达到该时长时标记候选。"),
+        "flatline_tolerance_uS": ("程序参考：0 μS", "平线检测允许的电导变化幅度。"),
+        "gap_factor": ("程序参考：1.5 × 中位间隔", "采样间隔超过典型间隔的该倍数时分段。"),
+    }
     for key, label, high in (("min_uS", "最低电导 (μS；0=关闭)", 1e6),
                              ("max_uS", "最高电导 (μS；0=关闭)", 1e6),
                              ("max_slope_uS_s", "最大斜率 (μS/s；0=关闭)", 1e9),
@@ -1753,10 +2238,29 @@ def create_window(initial_config: Any = None):
                              ("gap_factor", "缺口分段倍数", 100)):
         current = config["qc"][key]
         box = spin_box(current, 0, high, 0.1, 5)
-        qc_parameter_form.addRow(label, box)
+        box.setToolTip(qc_references[key][1])
+        note = QLabel(qc_references[key][0])
+        note.setObjectName("subtle")
+        note.setMinimumWidth(170)
+        note.setWordWrap(True)
+        field = QWidget()
+        row = QHBoxLayout(field)
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(10)
+        row.addWidget(box)
+        row.addWidget(note, 1)
+        qc_parameter_form.addRow(label, field)
         optional = key in ("min_uS", "max_uS", "max_slope_uS_s", "max_jump_uS")
         bind_section_control("qc", key, box,
                              transform=(lambda value: None if float(value) <= 0 else float(value)) if optional else float)
+    qc_source = QLabel(
+        '<a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5880745/">'
+        "Kleckner 等（2017）表 1 文献示例</a>：限值与设备和研究情境有关，不是通用标准。"
+    )
+    qc_source.setOpenExternalLinks(True)
+    qc_source.setWordWrap(True)
+    qc_source.setObjectName("subtle")
+    qc_parameter_form.addRow("参考来源", qc_source)
     qc_layout.insertWidget(qc_layout.indexOf(annotation_group), qc_parameter_group)
 
     scr_group = QGroupBox("SCR 事件")
@@ -1860,7 +2364,7 @@ def create_window(initial_config: Any = None):
     extended_enabled.setChecked(bool(config["features"].get("extended", {}).get("enabled", False)))
     extended_layout.addWidget(extended_enabled)
     extended_note = QLabel(
-        "每个页签编辑一个已批准的参数对象；应用时按当前 schema 严格校验并写入项目自动保存。"
+        "在各页签直接填写参数，点击应用后检查参数并保存到当前项目。"
         "指标定义、单位、有效支持和资格说明可在注册表行悬停查看。"
     )
     extended_note.setObjectName("subtle")
@@ -1883,22 +2387,33 @@ def create_window(initial_config: Any = None):
         "trial_series": "试次序列", "nonspecific": "非特异 SCR", "spectral": "频谱",
         "autocorrelation": "自相关", "complexity": "复杂度", "group_temporal": "群体时序",
     }
-    parameter_editors: dict[str, QPlainTextEdit] = {}
+    parameter_editors: dict[str, ParameterForm] = {}
+    parameter_validation_labels: dict[str, QLabel] = {}
     for parameter_key, parameter_label in parameter_labels.items():
         tab = QWidget()
         tab_layout = QVBoxLayout(tab)
-        editor = QPlainTextEdit()
-        editor.setObjectName(f"extendedParameter_{parameter_key}")
-        editor.setMinimumHeight(180)
-        editor.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
-        editor.setPlaceholderText("该参数对象会在扩展指标 schema 中校验。")
-        tab_layout.addWidget(editor)
+        editor = ParameterForm(parameter_key,
+                               config["features"].get("extended", {}).get(parameter_key, {}),
+                               parent=tab)
+        scroll = QScrollArea(tab)
+        scroll.setObjectName(f"extendedParameterScroll_{parameter_key}")
+        scroll.setWidgetResizable(True)
+        scroll.setWidget(editor)
+        tab_layout.addWidget(scroll, 1)
         apply_parameters = QPushButton(f"应用{parameter_label}参数")
         apply_parameters.setObjectName(f"applyExtended_{parameter_key}")
-        tab_layout.addWidget(apply_parameters)
+        apply_parameters.setMinimumHeight(32)
+        validation_label = QLabel("")
+        validation_label.setObjectName(f"extendedParameterStatus_{parameter_key}")
+        validation_label.setWordWrap(True)
+        validation_label.setObjectName("subtle")
+        tab_layout.addWidget(validation_label)
+        tab_layout.addWidget(apply_parameters, alignment=Qt.AlignmentFlag.AlignRight)
         parameter_tabs.addTab(tab, parameter_label)
         parameter_editors[parameter_key] = editor
+        parameter_validation_labels[parameter_key] = validation_label
         widgets[f"apply_extended_{parameter_key}"] = apply_parameters
+        widgets[f"extended_parameter_status_{parameter_key}"] = validation_label
     extended_layout.addWidget(parameter_tabs)
     window_form.addRow("扩展参数", extended_group)
     whole_record_check = QCheckBox("包含全记录窗口")
@@ -2114,11 +2629,11 @@ def create_window(initial_config: Any = None):
         update_feature_filters()
         update_feature_selection_status()
 
-    def apply_feature_family_parameters(parameter_key: str, editor: QPlainTextEdit) -> None:
+    def apply_feature_family_parameters(parameter_key: str, editor: ParameterForm) -> None:
+        validation_label = parameter_validation_labels[parameter_key]
+        validation_label.setText("")
         try:
-            parsed = parse_json_text(editor.toPlainText())
-            if not isinstance(parsed, dict):
-                raise ValueError("参数必须是 JSON 对象。")
+            parsed = editor.value()
             candidate = copy.deepcopy(state["config"])
             candidate["features"]["extended"][parameter_key] = parsed
             old_ids = list(candidate["features"].get("ids", []))
@@ -2152,10 +2667,14 @@ def create_window(initial_config: Any = None):
                     raise ValueError(f"先取消选择当前将停用的指标，再关闭对应家族：{names}{suffix}")
                 candidate["features"]["ids"] = sorted(adjusted_ids)
             if not apply_config(candidate, source=f"{parameter_labels[parameter_key]}参数"):
+                validation_label.setText("参数未应用。请按配置校验提示修改字段后再试。")
                 return
+            validation_label.setText("已校验并保存到当前配置；项目打开时会同步持久化。")
             update_feature_selection_status("参数已校验并保存；如 band/lag 配置改变，已选中的对应动态指标族随之更新。")
         except Exception as error:
-            QMessageBox.warning(window, "扩展参数无效", _format_error(error))
+            detail = _format_error(error)
+            validation_label.setText(f"未应用：{detail}")
+            QMessageBox.warning(window, "扩展参数无效", detail)
 
     def update_extended_enablement(enabled: bool) -> None:
         selected_ids = set(state["config"]["features"].get("ids", []))
@@ -2181,7 +2700,7 @@ def create_window(initial_config: Any = None):
         update_config_editor()
 
     def refresh_extended_parameter_editors() -> None:
-        driver_editor.setPlainText(json.dumps(state["config"]["decomposition"]["driver"], ensure_ascii=False, indent=2))
+        driver_editor.set_config(state["config"]["decomposition"]["driver"])
         extended = state["config"].get("features", {}).get("extended", {})
         extended_enabled.blockSignals(True)
         extended_enabled.setChecked(bool(extended.get("enabled", False)))
@@ -2190,8 +2709,8 @@ def create_window(initial_config: Any = None):
         baseline_min_spin.setValue(float(extended.get("baseline_min_uS", 1e-6)))
         baseline_min_spin.blockSignals(False)
         for parameter_key, editor in parameter_editors.items():
-            editor.setPlainText(json.dumps(extended.get(parameter_key, {}), ensure_ascii=False, indent=2,
-                                           allow_nan=False))
+            editor.set_value(extended.get(parameter_key, {}))
+            parameter_validation_labels[parameter_key].clear()
 
     def handle_feature_item_changed(item: QTableWidgetItem) -> None:
         if item.column() != 0:
@@ -2316,7 +2835,7 @@ def create_window(initial_config: Any = None):
     sync_form.addRow("方法边界", sync_note)
     put_content_before_stretch(sync_layout, sync_group)
 
-    stats_page, stats_layout = add_page("统计设计", "统计设计使用结构化字段；禁止公式/代码表达式。报告的独立单位与汇总规则必须与研究问题相符。")
+    stats_page, stats_layout = add_page("统计设计", "选择分析方法并填写字段。设计采用结构化中文表单；高级字段保留原配置，公式或代码不会执行。")
     stats_group = QGroupBox("已计划的统计分析")
     stats_layout_inner = QVBoxLayout(stats_group)
     stats_enabled = QCheckBox("运行统计设计")
@@ -2332,34 +2851,90 @@ def create_window(initial_config: Any = None):
     correction_row.addStretch(1)
     stats_layout_inner.addLayout(correction_row)
     bind_section_control("statistics", "correction", correction_box)
-    design_text = QPlainTextEdit()
-    design_text.setMinimumHeight(280)
-    design_text.setPlainText(json.dumps(config["statistics"]["designs"], ensure_ascii=False, indent=2))
-    stats_layout_inner.addWidget(QLabel("设计数组 JSON（例如 design_type、outcome、independent_unit、aggregate、condition_column；不接受 formula）"))
-    stats_layout_inner.addWidget(design_text)
+    design_toolbar = QHBoxLayout()
+    add_design_button = QPushButton("添加统计设计")
+    add_design_button.setObjectName("primary")
+    design_toolbar.addWidget(add_design_button)
+    design_toolbar.addStretch(1)
+    stats_layout_inner.addLayout(design_toolbar)
+    design_host = QWidget()
+    design_cards_layout = QVBoxLayout(design_host)
+    design_cards_layout.setContentsMargins(0, 0, 0, 0)
+    design_cards_layout.setSpacing(10)
+    stats_layout_inner.addWidget(design_host)
     design_apply = QPushButton("校验并应用统计设计")
-    stats_layout_inner.addWidget(design_apply, alignment=Qt.AlignmentFlag.AlignLeft)
-    participant_note = QLabel("参与者表可在“导入与映射 → 参与者 → 导入”绑定；统计按参与者/互动组/试次等声明的独立单位报告，不把重复测量自动当成独立样本。")
+    design_apply.setObjectName("primary")
+    stats_layout_inner.addWidget(design_apply, alignment=Qt.AlignmentFlag.AlignRight)
+    participant_note = QLabel("在“导入与映射”的统一工作簿中填写参与者表。统计按被试、互动组或会话声明独立单位，不会把重复测量自动视为独立样本。")
     participant_note.setWordWrap(True)
     participant_note.setObjectName("subtle")
     stats_layout_inner.addWidget(participant_note)
     put_content_before_stretch(stats_layout, stats_group)
 
+    widgets.update({"statistics_designs": design_host, "statistics_designs_layout": design_cards_layout,
+                    "statistics_design_forms": [], "statistics_add_design": add_design_button,
+                    "statistics_apply": design_apply})
+
+    def remove_statistics_form(form: StatisticsDesignForm) -> None:
+        if form in widgets["statistics_design_forms"]:
+            widgets["statistics_design_forms"].remove(form)
+            design_cards_layout.removeWidget(form)
+            form.setParent(None)
+            form.deleteLater()
+            for index, remaining in enumerate(widgets["statistics_design_forms"], start=1):
+                remaining._update_heading(index)
+
+    def add_statistics_form(design: dict[str, Any], index: int) -> StatisticsDesignForm:
+        form = StatisticsDesignForm(design, index=index, remove_callback=remove_statistics_form,
+                                   parent=design_host)
+        form.remove_button.setObjectName("danger")
+        widgets["statistics_design_forms"].append(form)
+        design_cards_layout.addWidget(form)
+        return form
+
+    def refresh_statistics_forms() -> None:
+        layout = widgets["statistics_designs_layout"]
+        while layout.count():
+            item = layout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.setParent(None)
+                widget.deleteLater()
+        widgets["statistics_design_forms"] = []
+        for index, design in enumerate(state["config"]["statistics"].get("designs", []), start=1):
+            add_statistics_form(design, index)
+
+    def config_with_analysis_forms() -> dict[str, Any]:
+        candidate = copy.deepcopy(state["config"])
+        candidate["statistics"]["designs"] = [form.to_config() for form in widgets["statistics_design_forms"]]
+        candidate["decomposition"]["driver"] = driver_editor.to_config()
+        return candidate
+
+    def add_new_statistics_design() -> None:
+        index = len(widgets["statistics_design_forms"]) + 1
+        existing_ids = {form.design_id.text().strip() for form in widgets["statistics_design_forms"]}
+        design_id = f"design_{index}"
+        suffix = index
+        while design_id in existing_ids:
+            suffix += 1
+            design_id = f"design_{suffix}"
+        add_statistics_form({"design_id": design_id, "outcome": "", "design_type": "descriptive",
+                             "independent_unit": "subject_id"}, index)
+
+    add_design_button.clicked.connect(add_new_statistics_design)
+    refresh_statistics_forms()
+
     def apply_design() -> None:
         try:
-            designs = parse_json_text(design_text.toPlainText())
-            candidate = copy.deepcopy(state["config"])
-            candidate["statistics"]["designs"] = designs
-            resolved = resolve_config(candidate)
+            resolved = resolve_config(config_with_analysis_forms())
+            count = len(resolved["statistics"]["designs"])
             state["config"] = resolved
             refresh_bound_controls()
-            design_text.setPlainText(json.dumps(resolved["statistics"]["designs"], ensure_ascii=False, indent=2))
-            log(f"统计设计校验通过：{len(designs)} 项")
+            log(f"统计设计校验通过：{count} 项")
         except Exception as error:
             QMessageBox.warning(window, "统计设计未通过", _format_error(error))
 
     design_apply.clicked.connect(apply_design)
-    widgets["statistics_designs"] = design_text
 
     # ── 结果、产物预览和真实后台运行 ───────────────────────────────────────
     results_page, results_layout = add_page("结果", "显示当前 pipeline 真实返回的 summary、导出表预览、图形和运行目录；不会用示例数据填补缺项。")
@@ -3025,6 +3600,14 @@ def create_window(initial_config: Any = None):
     attempt_detail.setReadOnly(True)
     attempt_detail.setMaximumHeight(120)
     task_layout.insertWidget(max(0, task_layout.count() - 1), attempt_detail)
+    session_log_group = QGroupBox("本次会话消息")
+    session_log_layout = QVBoxLayout(session_log_group)
+    session_log_layout.setContentsMargins(8, 10, 8, 8)
+    session_log_layout.setSpacing(4)
+    session_log_layout.addWidget(log_header)
+    session_log_layout.addWidget(log_box)
+    task_layout.insertWidget(max(0, task_layout.count() - 1), session_log_group)
+    widgets["session_log_group"] = session_log_group
     log_group = QGroupBox("项目持久化日志")
     log_layout = QVBoxLayout(log_group)
     log_search_row = QHBoxLayout()
@@ -3619,28 +4202,41 @@ def create_window(initial_config: Any = None):
 
     def set_busy(is_busy: bool) -> None:
         state["busy"] = is_busy
+        has_project = state.get("project") is not None
+        compute_ok = state.get("compute_configuration_error") is None
         preset.setEnabled(not is_busy)
+        add_task_button.setEnabled(not is_busy and has_project and compute_ok)
         widgets["import_config"].setEnabled(not is_busy)
         widgets["save_config"].setEnabled(not is_busy)
         widgets["plan"].setEnabled(not is_busy)
-        widgets["preflight"].setEnabled(not is_busy and state.get("project") is not None)
-        widgets["trial"].setEnabled(not is_busy)
-        widgets["batch"].setEnabled(not is_busy)
+        widgets["preflight"].setEnabled(not is_busy and has_project and compute_ok)
+        widgets["trial"].setEnabled(not is_busy and has_project and compute_ok)
+        widgets["batch"].setEnabled(not is_busy and has_project and compute_ok)
         widgets["cancel"].setEnabled(is_busy)
-        widgets["start_queue"].setEnabled(not is_busy and state.get("project") is not None)
+        widgets["cancel"].setVisible(is_busy)
+        widgets["start_queue"].setEnabled(not is_busy and has_project and compute_ok)
+        for action_key, allowed in (("add_single_task_action", not is_busy and has_project and compute_ok),
+                                    ("add_batch_task_action", not is_busy and has_project and compute_ok),
+                                    ("task_single_action", not is_busy and has_project and compute_ok),
+                                    ("task_batch_action", not is_busy and has_project and compute_ok),
+                                    ("preflight_action", not is_busy and has_project and compute_ok),
+                                    ("plan_action", not is_busy),
+                                    ("import_action", not is_busy),
+                                    ("export_action", not is_busy)):
+            action = widgets.get(action_key)
+            if action is not None:
+                action.setEnabled(allowed)
 
     def submit_preflight(snapshot: dict[str, Any], project_state: dict[str, Any], *,
                          pending_kind: str | None) -> None:
         generation = int(state.get("preflight_generation", 0)) + 1
         cancel_event = threading.Event()
-        editor_config = resolve_run_config(parse_json_text(config_json.toPlainText()))
         context = {
             "generation": generation,
             "project_id": project_state["project_id"],
             "project_state": copy.deepcopy(project_state),
             "project_path": str(Path(project_state["project_directory"]).resolve()),
-            "editor_config_sha256": canonical_config_sha256(editor_config),
-            "live_config_sha256": canonical_config_sha256(state["config"]),
+            "config_sha256": canonical_config_sha256(state["config"]),
             "invalidated_reason": None,
         }
         state["preflight_generation"] = generation
@@ -3655,6 +4251,7 @@ def create_window(initial_config: Any = None):
             preflight_run, copy.deepcopy(snapshot), None, copy.deepcopy(project_state),
             cancel_event.is_set, state["runtime_session"]["event_sink"] if state.get("runtime_session") else None)
         widgets["cancel"].setEnabled(True)
+        widgets["cancel"].setVisible(True)
 
     def preflight_context_is_current(context: dict[str, Any] | None) -> tuple[bool, str]:
         if not isinstance(context, dict):
@@ -3669,14 +4266,8 @@ def create_window(initial_config: Any = None):
         current_state = project_state_snapshot()
         if current_state != context.get("project_state"):
             return False, "项目、marker 或 QC 修订已改变"
-        if canonical_config_sha256(state.get("config", {})) != context.get("live_config_sha256"):
+        if canonical_config_sha256(state.get("config", {})) != context.get("config_sha256"):
             return False, "当前配置已改变"
-        try:
-            editor_config = resolve_run_config(parse_json_text(config_json.toPlainText()))
-        except Exception:
-            return False, "配置编辑器内容无效或已改变"
-        if canonical_config_sha256(editor_config) != context.get("editor_config_sha256"):
-            return False, "配置编辑器内容已改变"
         return True, ""
 
     def start_pipeline(*, trial: bool) -> None:
@@ -3689,10 +4280,12 @@ def create_window(initial_config: Any = None):
             QMessageBox.information(window, "已有后台工作", "请等待当前预检或运行结束。")
             return
         try:
-            snapshot = resolve_run_config(parse_json_text(config_json.toPlainText()))
+            snapshot = resolve_run_config(config_with_analysis_forms())
         except Exception as error:
             QMessageBox.warning(window, "配置未通过校验", _format_error(error))
             return
+        state["config"] = copy.deepcopy(snapshot)
+        refresh_bound_controls()
         if trial:
             filename = mapping_file.text().strip()
             if not filename and snapshot["input"].get("signals"):
@@ -3747,8 +4340,9 @@ def create_window(initial_config: Any = None):
         if state.get("preflight_future") is not None or state.get("run_future") is not None:
             return
         try:
-            snapshot = resolve_run_config(parse_json_text(config_json.toPlainText()))
+            snapshot = resolve_run_config(config_with_analysis_forms())
             state["config"] = copy.deepcopy(snapshot)
+            refresh_bound_controls()
             if persist_project_draft() is None:
                 raise RuntimeError("项目草稿保存失败，不能生成可复核的预检报告。")
             materialize_project_events(snapshot)
@@ -3875,6 +4469,7 @@ def create_window(initial_config: Any = None):
             context = state.get("preflight_context")
             state["preflight_context"] = None
             widgets["cancel"].setEnabled(False)
+            widgets["cancel"].hide()
             pending = state.get("pending_enqueue")
             current, stale_reason = preflight_context_is_current(context)
             if not current:
@@ -4061,10 +4656,18 @@ def create_window(initial_config: Any = None):
     widgets["save_config"].clicked.connect(save_config_action)
     widgets["plan"].clicked.connect(show_plan)
 
-    def change_preset(name: str) -> None:
+    def change_preset(_index: int = -1) -> None:
+        name = preset.currentData()
         if not name or name == state["config"]["pipeline_id"] or state["busy"]:
             return
-        old = state["config"]
+        try:
+            old = resolve_config(config_with_analysis_forms())
+        except Exception as error:
+            preset.blockSignals(True)
+            preset.setCurrentIndex(max(0, preset.findData(state["config"]["pipeline_id"])))
+            preset.blockSignals(False)
+            QMessageBox.warning(window, "预设未切换", f"请先修正当前表单：{_format_error(error)}")
+            return
         candidate = get_preset(name)
         # 预设调整流程参数，继续保留用户显式选择的输入、单位/映射、QC 标注和输出位置。
         for section in ("input", "mapping", "qc", "output", "workspace", "runtime"):
@@ -4080,7 +4683,7 @@ def create_window(initial_config: Any = None):
             candidate["synchrony"] = copy.deepcopy(old["synchrony"])
         apply_config(candidate, source=f"预设 {name}")
 
-    preset.currentTextChanged.connect(change_preset)
+    preset.currentIndexChanged.connect(change_preset)
 
     def open_help() -> None:
         from importlib import resources
@@ -4101,6 +4704,43 @@ def create_window(initial_config: Any = None):
     def explain_errors() -> None:
         QMessageBox.information(window, "错误解释", "运行错误保存在结果页的 summary.errors 和日志。诊断含稳定 code、stage、record_id、field 与可选 remediation；修正输入或配置后，使用“校验并恢复”验证已提交缓存和输入哈希。未满足方法依赖时不会自动换用其他算法。")
 
+    settings_menu = window.menuBar().addMenu("设置")
+    import_action = QAction("导入设置…", window)
+    import_action.setToolTip("从 JSON 文件导入完整设置")
+    import_action.triggered.connect(lambda: widgets["import_config"].click())
+    export_action = QAction("导出设置为 JSON…", window)
+    export_action.setToolTip("导出当前控件/已应用设置，并选择保存位置")
+    export_action.triggered.connect(lambda: widgets["save_config"].click())
+    settings_menu.addAction(import_action)
+    settings_menu.addAction(export_action)
+
+    task_menu = window.menuBar().addMenu("任务")
+    plan_action = QAction("计划预览", window)
+    plan_action.triggered.connect(lambda: widgets["plan"].click())
+    preflight_action = QAction("运行前检查…", window)
+    preflight_action.triggered.connect(lambda: widgets["preflight"].click())
+    task_menu.addAction(plan_action)
+    task_menu.addAction(preflight_action)
+    task_menu.addSeparator()
+    task_single_action = QAction("单文件预检并入队…", window)
+    task_single_action.triggered.connect(lambda: widgets["trial"].click())
+    task_batch_action = QAction("批量预检并入队", window)
+    task_batch_action.triggered.connect(lambda: widgets["batch"].click())
+    task_menu.addAction(task_single_action)
+    task_menu.addAction(task_batch_action)
+    add_single_action.triggered.connect(lambda: widgets["trial"].click())
+    add_batch_action.triggered.connect(lambda: widgets["batch"].click())
+
+    has_project = state.get("project") is not None
+    for action, enabled in ((import_action, True), (export_action, True), (plan_action, True),
+                            (preflight_action, has_project), (task_single_action, has_project),
+                            (task_batch_action, has_project)):
+        action.setEnabled(enabled)
+    widgets.update({"import_action": import_action, "export_action": export_action,
+                    "plan_action": plan_action, "preflight_action": preflight_action,
+                    "task_single_action": task_single_action,
+                    "task_batch_action": task_batch_action})
+
     help_action = QAction("中文帮助", window)
     help_action.setShortcut(QKeySequence("F1"))
     help_action.triggered.connect(open_help)
@@ -4118,6 +4758,9 @@ def create_window(initial_config: Any = None):
         state["closed"] = True
         timer.stop()
         autosave_timer.stop()
+        environment_dialog = state.get("environment_dialog")
+        if environment_dialog is not None:
+            environment_dialog.shutdown()
         project = state.get("project")
         active_task_id = state.get("active_task_id")
         if project and active_task_id:
@@ -4152,6 +4795,7 @@ def create_window(initial_config: Any = None):
         widgets["preflight"].setEnabled(False)
         widgets["trial"].setEnabled(False)
         widgets["batch"].setEnabled(False)
+        widgets["add_task_button"].setEnabled(False)
         widgets["start_queue"].setEnabled(False)
         task_status_label.setText("未配置项目；打开项目后才会启用运行前检查、任务队列和持久日志。")
         marker_state_label.setText("未配置项目；打开项目后才能持久化 marker 编辑。")
@@ -4162,32 +4806,10 @@ def create_window(initial_config: Any = None):
 
 
 def main(argv: list[str] | None = None) -> int:
-    """启动 Qt 工作台；``--smoke --screenshot`` 保存真实窗口当前版本截图。"""
-    import argparse
+    """Start through the lightweight bootstrap so feedback appears before imports."""
+    from .bootstrap import main as bootstrap_main
 
-    parser = argparse.ArgumentParser(prog="eda-gui", description="皮肤电研究工作台")
-    parser.add_argument("--smoke", action="store_true", help="构建并显示一次真实 Qt 窗口后退出")
-    parser.add_argument("--screenshot", help="把当前真实窗口画面保存为 PNG")
-    parser.add_argument("--config", help="启动时读取完整 JSON 配置")
-    args, _unknown = parser.parse_known_args(argv)
-    initial = args.config
-    window, state = create_window(initial)
-    app = state["app"]
-    window.show()
-    app.processEvents()
-    if args.screenshot:
-        target = Path(args.screenshot).expanduser().resolve()
-        target.parent.mkdir(parents=True, exist_ok=True)
-        if not window.grab().save(str(target), "PNG"):
-            print(f"无法保存真实 Qt 窗口截图：{target}", file=sys.stderr)
-            window.close()
-            return 2
-        print(f"已保存真实 Qt 窗口截图：{target}")
-    if args.smoke:
-        window.close()
-        state["shutdown"]()
-        return 0
-    return app.exec()
+    return bootstrap_main(argv, ui_module=sys.modules[__name__])
 
 
 if __name__ == "__main__":

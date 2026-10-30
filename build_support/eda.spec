@@ -7,12 +7,12 @@ from PyInstaller.utils.hooks import collect_data_files, copy_metadata
 
 project = Path(SPECPATH).parent
 release_version = os.environ.get('EDA_RELEASE_VERSION', '')
-if release_version != '0.3.0':
-    raise RuntimeError('EDA_RELEASE_VERSION must be 0.3.0; use scripts/build_windows_current.ps1')
+if release_version != '0.3.1':
+    raise RuntimeError('EDA_RELEASE_VERSION must be 0.3.1; use scripts/build_windows_current.ps1')
 build_info_path = project / 'src' / 'eda_toolkit' / 'resources' / 'build_info.json'
 build_info = json.loads(build_info_path.read_text(encoding='utf-8'))
 if build_info.get('version') != release_version or build_info.get('fingerprint_scope') != 'package_python_except_ui_v1':
-    raise RuntimeError('build_info.json does not match this version and fingerprint scope; run the v0.2 inventory prepare step')
+    raise RuntimeError('build_info.json does not match this version and fingerprint scope; run scripts/build_windows_current.ps1')
 icon_names = ['app_icon.svg', 'app_icon.ico', 'app_icon_16.png', 'app_icon_24.png',
               'app_icon_32.png', 'app_icon_48.png', 'app_icon_64.png',
               'app_icon_128.png', 'app_icon_256.png']
@@ -62,4 +62,4 @@ gui_exe = EXE(pyz, gui.scripts, [], exclude_binaries=True, name='eda_gui', conso
               version=str(project / 'build_support' / 'version_info_gui.txt'),
               debug=False, strip=False, upx=False)
 bundle = COLLECT(cli_exe, gui_exe, cli.binaries, gui.binaries, cli.datas, gui.datas,
-                 strip=False, upx=False, name='EDA_Toolkit-v0.3.0')
+                 strip=False, upx=False, name='EDA_Toolkit-v0.3.1')

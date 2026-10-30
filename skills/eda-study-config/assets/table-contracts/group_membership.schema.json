@@ -1,0 +1,76 @@
+{
+  "schema_version": "1.0",
+  "name": "group_membership",
+  "display_name": "互动组成员",
+  "description": "描述社会互动/配对组，而不是实验组别。",
+  "fields": [
+    {
+      "name": "group_id",
+      "type": "string",
+      "unit": "none",
+      "required": true,
+      "missing": "forbidden",
+      "foreign_key": null,
+      "clock": null,
+      "description": "互动/配对组标识，不是 experimental_group。"
+    },
+    {
+      "name": "session_id",
+      "type": "string",
+      "unit": "none",
+      "required": true,
+      "missing": "forbidden",
+      "foreign_key": null,
+      "clock": null,
+      "description": ""
+    },
+    {
+      "name": "subject_id",
+      "type": "string",
+      "unit": "none",
+      "required": true,
+      "missing": "forbidden",
+      "foreign_key": "participants.subject_id",
+      "clock": null,
+      "description": ""
+    },
+    {
+      "name": "recording_id",
+      "type": "string",
+      "unit": "none",
+      "required": true,
+      "missing": "forbidden",
+      "foreign_key": "signals.recording_id",
+      "clock": null,
+      "description": ""
+    },
+    {
+      "name": "role",
+      "type": "string",
+      "unit": "none",
+      "required": false,
+      "missing": "allowed",
+      "foreign_key": null,
+      "clock": null,
+      "description": "互动角色；若研究需要则显式声明。"
+    },
+    {
+      "name": "channel",
+      "type": "string",
+      "unit": "none",
+      "required": false,
+      "missing": "allowed",
+      "foreign_key": null,
+      "clock": null,
+      "description": "可选通道范围。"
+    }
+  ],
+  "unique": [
+    [
+      "group_id",
+      "recording_id",
+      "channel"
+    ]
+  ],
+  "example_label": "SYNTHETIC_ONLY"
+}

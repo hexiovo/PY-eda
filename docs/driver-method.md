@@ -1,4 +1,4 @@
-# Driver 分解与指标（v0.3.0）
+# Driver 分解与指标（v0.3.1）
 
 选择 `single_driver` 预设，或在“分解与 SCR”页选择 `bateman_sparse`，即可启用 9 项 Driver 指标。参数编辑器应用前会执行校验。默认 `single` 仍使用独立滤波；该方法没有 Driver 输出。
 

@@ -1,0 +1,85 @@
+{
+  "schema_version": "1.0",
+  "name": "conditions",
+  "display_name": "条件区间",
+  "description": "以半开区间 [start_s,end_s) 表示；重叠语义由设计声明。",
+  "fields": [
+    {
+      "name": "recording_id",
+      "type": "string",
+      "unit": "none",
+      "required": true,
+      "missing": "forbidden",
+      "foreign_key": "signals.recording_id",
+      "clock": null,
+      "description": ""
+    },
+    {
+      "name": "interval_id",
+      "type": "string",
+      "unit": "none",
+      "required": true,
+      "missing": "forbidden",
+      "foreign_key": null,
+      "clock": null,
+      "description": ""
+    },
+    {
+      "name": "start_s",
+      "type": "number",
+      "unit": "s",
+      "required": true,
+      "missing": "forbidden",
+      "foreign_key": null,
+      "clock": "clock_domain",
+      "description": ""
+    },
+    {
+      "name": "end_s",
+      "type": "number",
+      "unit": "s",
+      "required": true,
+      "missing": "forbidden",
+      "foreign_key": null,
+      "clock": "clock_domain",
+      "description": ""
+    },
+    {
+      "name": "condition",
+      "type": "string",
+      "unit": "none",
+      "required": true,
+      "missing": "forbidden",
+      "foreign_key": null,
+      "clock": null,
+      "description": ""
+    },
+    {
+      "name": "channel",
+      "type": "string",
+      "unit": "none",
+      "required": false,
+      "missing": "allowed",
+      "foreign_key": null,
+      "clock": null,
+      "description": "多通道适用范围；具体通道名或显式 * 广播。"
+    },
+    {
+      "name": "clock_domain",
+      "type": "string",
+      "unit": "none",
+      "required": true,
+      "missing": "forbidden",
+      "foreign_key": null,
+      "clock": null,
+      "description": "条件区间所属时钟域，必须与信号一致。"
+    }
+  ],
+  "unique": [
+    [
+      "recording_id",
+      "interval_id"
+    ]
+  ],
+  "example_label": "SYNTHETIC_ONLY"
+}

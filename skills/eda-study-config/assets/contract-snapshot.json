@@ -1,0 +1,2150 @@
+{
+  "toolkit_version": "0.3.1",
+  "schema_version": "1.1",
+  "source_sha256": {
+    "src/eda_toolkit/config.py": "76fb5598319dd30e2aac6299228bb865a655666f5b8d22aeea17daac7a98cc5c",
+    "src/eda_toolkit/core_statistics.py": "558a4121a9f1bc631bdda5a6f1aa948efcab65b3523f7a03d9aa9a5744759cff",
+    "src/eda_toolkit/pipeline.py": "44ffafbe127f76072f2d91cce7ecdc4ae59dbcb76ca32331dc8a1ea289643898",
+    "src/eda_toolkit/cli.py": "0fbf0ec563238469c6b3b50e0c311aa57b9e2aac3a4235d12ef58c54ddbb64d2",
+    "src/eda_toolkit/capabilities.py": "c3f319c504e061aa2043f7cdd21d17f1d202cbca8cbe87fb5027ae171e5d9721"
+  },
+  "capabilities": {
+    "python": "3.14.8",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "cpu_count": 28,
+    "memory": {
+      "total_mb": 16070,
+      "available_mb": 3784,
+      "probe_status": "measured"
+    },
+    "gpu": {
+      "probe_status": "measured",
+      "available": true,
+      "backend_enabled": true,
+      "devices": [
+        "NVIDIA GeForce RTX 3050 (6144 MiB)"
+      ],
+      "device_details": [
+        {
+          "name": "NVIDIA GeForce RTX 3050",
+          "memory_total_mb": 6144
+        }
+      ],
+      "device": "NVIDIA GeForce RTX 3050",
+      "device_count": 1,
+      "driver_version": "560.94",
+      "cuda_driver_version": "12.6",
+      "cuda_runtime_version": 12090,
+      "cupy_version": "14.2.0",
+      "cupy_distribution": "cupy-cuda12x",
+      "cuda_package": "cupy-cuda12x",
+      "compute_capability": "8.6",
+      "python_version": "3.14.8",
+      "python_abi": "cp314",
+      "platform_machine": "AMD64",
+      "install_supported": true,
+      "installer_python": null,
+      "blocked_reason": null,
+      "fft_probe_length": 2,
+      "source": "isolated"
+    },
+    "source_fingerprint": "5ff5f20a744003be8d51b819f6c1d13aebb2c91ddc9b9ea650624a6df10c8d0d",
+    "numerical_environment_fingerprint": "3b4dc8f563481aa8a99653776e8c66dcb6944fb2fa910cef34329e4da0f1c281",
+    "output_directory": null,
+    "packages": {
+      "numpy": "2.5.4",
+      "scipy": "1.18.1",
+      "pandas": "3.1.0",
+      "PySide6": "6.12.0",
+      "matplotlib": "3.11.2",
+      "statsmodels": "0.15.0",
+      "openpyxl": "3.1.5",
+      "reportlab": "5.1.0",
+      "cupy-cuda12x": null,
+      "cupy-cuda13x": null
+    },
+    "methods": {
+      "bateman_sparse": {
+        "enabled": true,
+        "readiness": "research",
+        "reason": "本地 Bateman 非负稀疏反卷积；输出 driver 与收敛诊断。"
+      },
+      "filter_separation": {
+        "enabled": true,
+        "readiness": "research",
+        "reason": "独立SciPy滤波分离；真实设备适用性待验证。"
+      },
+      "cvxeda": {
+        "enabled": false,
+        "readiness": "blocked_license",
+        "reason": "尚未完成GPL/求解器发行决策及固定实现数值验证。"
+      },
+      "ledalab": {
+        "enabled": false,
+        "readiness": "unavailable_dependency",
+        "reason": "未包含经过验证的Python CDA/DDA移植；基础版不依赖MATLAB。"
+      },
+      "gpu": {
+        "enabled": true,
+        "readiness": "ready",
+        "reason": "CuPy/Bateman GPU运行时已通过设备与FFT探测。"
+      }
+    },
+    "science_qualification": "pending_representative_real_data"
+  },
+  "feature_definitions": {
+    "valid_sample_proportion": {
+      "id": "valid_sample_proportion",
+      "label_zh": "有效样本比例",
+      "family": "legacy",
+      "formula": "valid sample count / recorded window sample count",
+      "basis": "quality",
+      "unit": "fraction",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "finite eligible samples/support",
+      "qualification": "legacy_v0.1_method_preserved_not_real_data_qualified"
+    },
+    "interpolated_sample_proportion": {
+      "id": "interpolated_sample_proportion",
+      "label_zh": "插值样本比例",
+      "family": "legacy",
+      "formula": "interpolated sample count / recorded window sample count",
+      "basis": "quality",
+      "unit": "fraction",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "finite eligible samples/support",
+      "qualification": "legacy_v0.1_method_preserved_not_real_data_qualified"
+    },
+    "artifact_sample_proportion": {
+      "id": "artifact_sample_proportion",
+      "label_zh": "伪迹样本比例",
+      "family": "legacy",
+      "formula": "artifact sample count / recorded window sample count",
+      "basis": "quality",
+      "unit": "fraction",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "finite eligible samples/support",
+      "qualification": "legacy_v0.1_method_preserved_not_real_data_qualified"
+    },
+    "mean": {
+      "id": "mean",
+      "label_zh": "均值",
+      "family": "legacy",
+      "formula": "eligible clean sample mean",
+      "basis": "clean_uS",
+      "unit": "uS",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "finite eligible samples/support",
+      "qualification": "legacy_v0.1_method_preserved_not_real_data_qualified"
+    },
+    "median": {
+      "id": "median",
+      "label_zh": "中位数",
+      "family": "legacy",
+      "formula": "eligible clean sample median",
+      "basis": "clean_uS",
+      "unit": "uS",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "finite eligible samples/support",
+      "qualification": "legacy_v0.1_method_preserved_not_real_data_qualified"
+    },
+    "range": {
+      "id": "range",
+      "label_zh": "极差",
+      "family": "legacy",
+      "formula": "sample max - sample min",
+      "basis": "clean_uS",
+      "unit": "uS",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "finite eligible samples/support",
+      "qualification": "legacy_v0.1_method_preserved_not_real_data_qualified"
+    },
+    "sd": {
+      "id": "sd",
+      "label_zh": "标准差",
+      "family": "legacy",
+      "formula": "sample SD, ddof=1",
+      "basis": "clean_uS",
+      "unit": "uS",
+      "min_n": 2,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "finite eligible samples/support",
+      "qualification": "legacy_v0.1_method_preserved_not_real_data_qualified"
+    },
+    "iqr": {
+      "id": "iqr",
+      "label_zh": "四分位距",
+      "family": "legacy",
+      "formula": "Q75-Q25",
+      "basis": "clean_uS",
+      "unit": "uS",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "finite eligible samples/support",
+      "qualification": "legacy_v0.1_method_preserved_not_real_data_qualified"
+    },
+    "slope": {
+      "id": "slope",
+      "label_zh": "线性斜率",
+      "family": "legacy",
+      "formula": "OLS(clean_uS ~ time_s)",
+      "basis": "clean_uS",
+      "unit": "uS/s",
+      "min_n": 2,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "finite eligible samples/support",
+      "qualification": "legacy_v0.1_method_preserved_not_real_data_qualified"
+    },
+    "tonic_mean": {
+      "id": "tonic_mean",
+      "label_zh": "tonic均值",
+      "family": "legacy",
+      "formula": "eligible tonic sample mean",
+      "basis": "tonic_uS",
+      "unit": "uS",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "finite eligible samples/support",
+      "qualification": "legacy_v0.1_method_preserved_not_real_data_qualified"
+    },
+    "tonic_mean_change": {
+      "id": "tonic_mean_change",
+      "label_zh": "tonic均值变化",
+      "family": "legacy",
+      "formula": "tonic sample mean - first eligible tonic sample",
+      "basis": "tonic_uS",
+      "unit": "uS",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "finite eligible samples/support",
+      "qualification": "legacy_v0.1_method_preserved_not_real_data_qualified"
+    },
+    "phasic_auc": {
+      "id": "phasic_auc",
+      "label_zh": "phasic带符号面积",
+      "family": "legacy",
+      "formula": "clipped signed trapezoidal integral",
+      "basis": "phasic_uS",
+      "unit": "uS_s",
+      "min_n": 2,
+      "min_duration_s": 1e-12,
+      "parameters": {},
+      "validity": "finite eligible samples/support",
+      "qualification": "legacy_v0.1_method_preserved_not_real_data_qualified"
+    },
+    "scr_count": {
+      "id": "scr_count",
+      "label_zh": "SCR计数",
+      "family": "legacy",
+      "formula": "qualified SCR onsets in [start,end)",
+      "basis": "qualified_global_scr_catalogue",
+      "unit": "count",
+      "min_n": 0,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "finite eligible samples/support",
+      "qualification": "legacy_v0.1_method_preserved_not_real_data_qualified"
+    },
+    "scr_rate": {
+      "id": "scr_rate",
+      "label_zh": "SCR速率",
+      "family": "legacy",
+      "formula": "60 * qualified count / onset-eligible exposure",
+      "basis": "qualified_global_scr_catalogue",
+      "unit": "responses/min",
+      "min_n": 1,
+      "min_duration_s": 1e-12,
+      "parameters": {},
+      "validity": "finite eligible samples/support",
+      "qualification": "legacy_v0.1_method_preserved_not_real_data_qualified"
+    },
+    "scr_amplitude_mean": {
+      "id": "scr_amplitude_mean",
+      "label_zh": "SCR幅值均值",
+      "family": "legacy",
+      "formula": "mean qualified SCR amplitude",
+      "basis": "qualified_global_scr_catalogue",
+      "unit": "uS",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "finite eligible samples/support",
+      "qualification": "legacy_v0.1_method_preserved_not_real_data_qualified"
+    },
+    "scr_amplitude_median": {
+      "id": "scr_amplitude_median",
+      "label_zh": "SCR幅值中位数",
+      "family": "legacy",
+      "formula": "median qualified SCR amplitude",
+      "basis": "qualified_global_scr_catalogue",
+      "unit": "uS",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "finite eligible samples/support",
+      "qualification": "legacy_v0.1_method_preserved_not_real_data_qualified"
+    },
+    "scr_amplitude_sum": {
+      "id": "scr_amplitude_sum",
+      "label_zh": "SCR幅值和",
+      "family": "legacy",
+      "formula": "sum qualified SCR amplitude; zero-inclusive",
+      "basis": "qualified_global_scr_catalogue",
+      "unit": "uS",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "finite eligible samples/support",
+      "qualification": "legacy_v0.1_method_preserved_not_real_data_qualified"
+    },
+    "scr_rise_time_mean": {
+      "id": "scr_rise_time_mean",
+      "label_zh": "SCR上升时间均值",
+      "family": "legacy",
+      "formula": "mean SCR rise duration",
+      "basis": "qualified_global_scr_catalogue",
+      "unit": "s",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "finite eligible samples/support",
+      "qualification": "legacy_v0.1_method_preserved_not_real_data_qualified"
+    },
+    "scr_recovery_time_mean": {
+      "id": "scr_recovery_time_mean",
+      "label_zh": "SCR恢复时间均值",
+      "family": "legacy",
+      "formula": "mean completed recovery duration",
+      "basis": "qualified_global_scr_catalogue",
+      "unit": "s",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "finite eligible samples/support",
+      "qualification": "legacy_v0.1_method_preserved_not_real_data_qualified"
+    },
+    "scr_area_sum_uS_s": {
+      "id": "scr_area_sum_uS_s",
+      "label_zh": "SCR上升段基线差面积和",
+      "family": "legacy",
+      "formula": "sum signed onset-to-peak area above onset level",
+      "basis": "qualified_global_scr_catalogue.area_uS_s",
+      "unit": "uS_s",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "finite eligible samples/support",
+      "qualification": "legacy_v0.1_method_preserved_not_real_data_qualified"
+    },
+    "scr_area_mean_uS_s": {
+      "id": "scr_area_mean_uS_s",
+      "label_zh": "SCR上升段基线差面积均值",
+      "family": "legacy",
+      "formula": "mean signed onset-to-peak area above onset level",
+      "basis": "qualified_global_scr_catalogue.area_uS_s",
+      "unit": "uS_s",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "finite eligible samples/support",
+      "qualification": "legacy_v0.1_method_preserved_not_real_data_qualified"
+    },
+    "event_baseline_mean_uS": {
+      "id": "event_baseline_mean_uS",
+      "label_zh": "事件基线均值",
+      "family": "legacy",
+      "formula": "clean sample mean in configured baseline window",
+      "basis": "clean_uS",
+      "unit": "uS",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "finite eligible samples/support",
+      "qualification": "legacy_v0.1_method_preserved_not_real_data_qualified"
+    },
+    "event_scr_count": {
+      "id": "event_scr_count",
+      "label_zh": "事件相关SCR计数",
+      "family": "legacy",
+      "formula": "unique event-SCR links",
+      "basis": "unique_event_scr_links",
+      "unit": "count",
+      "min_n": 0,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "finite eligible samples/support",
+      "qualification": "legacy_v0.1_method_preserved_not_real_data_qualified"
+    },
+    "event_response_present": {
+      "id": "event_response_present",
+      "label_zh": "事件响应是否出现",
+      "family": "legacy",
+      "formula": "unique event-linked SCR count > 0",
+      "basis": "unique_event_scr_links",
+      "unit": "boolean",
+      "min_n": 0,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "finite eligible samples/support",
+      "qualification": "legacy_v0.1_method_preserved_not_real_data_qualified"
+    },
+    "event_first_amplitude_uS": {
+      "id": "event_first_amplitude_uS",
+      "label_zh": "事件首个SCR幅值",
+      "family": "legacy",
+      "formula": "earliest linked SCR amplitude",
+      "basis": "unique_event_scr_links",
+      "unit": "uS",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "finite eligible samples/support",
+      "qualification": "legacy_v0.1_method_preserved_not_real_data_qualified"
+    },
+    "event_max_amplitude_uS": {
+      "id": "event_max_amplitude_uS",
+      "label_zh": "事件最大SCR幅值",
+      "family": "legacy",
+      "formula": "maximum linked SCR amplitude",
+      "basis": "unique_event_scr_links",
+      "unit": "uS",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "finite eligible samples/support",
+      "qualification": "legacy_v0.1_method_preserved_not_real_data_qualified"
+    },
+    "event_amp_sum_uS": {
+      "id": "event_amp_sum_uS",
+      "label_zh": "事件SCR幅值和",
+      "family": "legacy",
+      "formula": "sum linked SCR amplitudes; zero-inclusive",
+      "basis": "unique_event_scr_links",
+      "unit": "uS",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "finite eligible samples/support",
+      "qualification": "legacy_v0.1_method_preserved_not_real_data_qualified"
+    },
+    "event_latency_s": {
+      "id": "event_latency_s",
+      "label_zh": "事件首个SCR潜伏期",
+      "family": "legacy",
+      "formula": "first linked SCR onset - event onset",
+      "basis": "unique_event_scr_links",
+      "unit": "s",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "finite eligible samples/support",
+      "qualification": "legacy_v0.1_method_preserved_not_real_data_qualified"
+    },
+    "event_phasic_auc_uS_s": {
+      "id": "event_phasic_auc_uS_s",
+      "label_zh": "事件phasic带符号面积",
+      "family": "legacy",
+      "formula": "clipped signed phasic integral in response window",
+      "basis": "phasic_uS",
+      "unit": "uS_s",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "finite eligible samples/support",
+      "qualification": "legacy_v0.1_method_preserved_not_real_data_qualified"
+    },
+    "event_response_mean_change_uS": {
+      "id": "event_response_mean_change_uS",
+      "label_zh": "事件响应均值变化",
+      "family": "legacy",
+      "formula": "clean response sample mean - clean baseline sample mean",
+      "basis": "clean_uS",
+      "unit": "uS",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "finite eligible samples/support",
+      "qualification": "legacy_v0.1_method_preserved_not_real_data_qualified"
+    },
+    "event_peak_max_amplitude_uS": {
+      "id": "event_peak_max_amplitude_uS",
+      "label_zh": "事件峰值窗最大SCR幅值",
+      "family": "legacy",
+      "formula": "maximum linked SCR amplitude by peak time in configured peak window",
+      "basis": "unique_event_scr_links",
+      "unit": "uS",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "finite eligible samples/support",
+      "qualification": "legacy_v0.1_method_preserved_not_real_data_qualified"
+    },
+    "event_recovery_mean_s": {
+      "id": "event_recovery_mean_s",
+      "label_zh": "事件SCR完成恢复时间均值",
+      "family": "legacy",
+      "formula": "mean completed linked SCR recovery duration",
+      "basis": "unique_event_scr_links",
+      "unit": "s",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "finite eligible samples/support",
+      "qualification": "legacy_v0.1_method_preserved_not_real_data_qualified"
+    },
+    "event_scr_area_sum_uS_s": {
+      "id": "event_scr_area_sum_uS_s",
+      "label_zh": "事件SCR上升段基线差面积和",
+      "family": "legacy",
+      "formula": "sum unique event-linked onset-to-peak area",
+      "basis": "unique_event_scr_links.area_uS_s",
+      "unit": "uS_s",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "finite eligible samples/support",
+      "qualification": "legacy_v0.1_method_preserved_not_real_data_qualified"
+    },
+    "tonic_sd": {
+      "id": "tonic_sd",
+      "label_zh": "tonic标准差",
+      "family": "tonic",
+      "formula": "sample SD(ddof=1)",
+      "basis": "tonic_uS",
+      "unit": "uS",
+      "min_n": 2,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "ddof": 1
+      },
+      "validity": "finite eligible samples/support; sample-based unless formula explicitly integrates time",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "tonic_median": {
+      "id": "tonic_median",
+      "label_zh": "tonic中位数",
+      "family": "tonic",
+      "formula": "sample median",
+      "basis": "tonic_uS",
+      "unit": "uS",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "finite eligible samples/support; sample-based unless formula explicitly integrates time",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "tonic_iqr": {
+      "id": "tonic_iqr",
+      "label_zh": "tonic四分位距",
+      "family": "tonic",
+      "formula": "linear Q75-Q25",
+      "basis": "tonic_uS",
+      "unit": "uS",
+      "min_n": 2,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "percentile_method": "linear",
+        "quartiles": [
+          25,
+          75
+        ]
+      },
+      "validity": "finite eligible samples/support; sample-based unless formula explicitly integrates time",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "tonic_slope": {
+      "id": "tonic_slope",
+      "label_zh": "tonic线性斜率",
+      "family": "tonic",
+      "formula": "OLS(tonic_uS ~ time_s)",
+      "basis": "tonic_uS",
+      "unit": "uS/s",
+      "min_n": 2,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "finite eligible samples/support; sample-based unless formula explicitly integrates time",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "tonic_first_last_change_uS": {
+      "id": "tonic_first_last_change_uS",
+      "label_zh": "tonic首末变化",
+      "family": "tonic",
+      "formula": "last eligible tonic sample - first eligible tonic sample",
+      "basis": "tonic_uS",
+      "unit": "uS",
+      "min_n": 2,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "finite eligible samples/support; sample-based unless formula explicitly integrates time",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "scr_amplitude_sd": {
+      "id": "scr_amplitude_sd",
+      "label_zh": "SCR幅值标准差",
+      "family": "scr_distribution",
+      "formula": "sample SD(ddof=1)",
+      "basis": "qualified SCR amplitude_uS",
+      "unit": "uS",
+      "min_n": 2,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "ddof": 1
+      },
+      "validity": "primary onset-eligible SCRs with onset in the half-open window; censored values retain catalogue status",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "scr_amplitude_max": {
+      "id": "scr_amplitude_max",
+      "label_zh": "SCR最大幅值",
+      "family": "scr_distribution",
+      "formula": "max(amplitude_uS)",
+      "basis": "qualified SCR amplitude_uS",
+      "unit": "uS",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "primary onset-eligible SCRs with onset in the half-open window; censored values retain catalogue status",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "scr_amplitude_p90": {
+      "id": "scr_amplitude_p90",
+      "label_zh": "SCR幅值第90百分位",
+      "family": "scr_distribution",
+      "formula": "linear percentile 90",
+      "basis": "qualified SCR amplitude_uS",
+      "unit": "uS",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "percentile_method": "linear",
+        "percentile": 90
+      },
+      "validity": "primary onset-eligible SCRs with onset in the half-open window; censored values retain catalogue status",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "scr_amplitude_iqr": {
+      "id": "scr_amplitude_iqr",
+      "label_zh": "SCR幅值四分位距",
+      "family": "scr_distribution",
+      "formula": "linear Q75-Q25",
+      "basis": "qualified SCR amplitude_uS",
+      "unit": "uS",
+      "min_n": 2,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "percentile_method": "linear",
+        "quartiles": [
+          25,
+          75
+        ]
+      },
+      "validity": "primary onset-eligible SCRs with onset in the half-open window; censored values retain catalogue status",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "scr_rise_slope_mean_uS_s": {
+      "id": "scr_rise_slope_mean_uS_s",
+      "label_zh": "SCR平均上升斜率均值",
+      "family": "scr_rise",
+      "formula": "mean(A/(peak_s-onset_s))",
+      "basis": "qualified SCR",
+      "unit": "uS/s",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "primary onset-eligible SCRs with onset in the half-open window; censored values retain catalogue status",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "scr_rise_max_slope_mean_uS_s": {
+      "id": "scr_rise_max_slope_mean_uS_s",
+      "label_zh": "SCR局部最大上升斜率均值",
+      "family": "scr_rise",
+      "formula": "mean(per-SCR max adjacent diff(signal)/dt)",
+      "basis": "qualified detector signal",
+      "unit": "uS/s",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "primary onset-eligible SCRs with onset in the half-open window; censored values retain catalogue status",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "scr_rise_max_slope_max_uS_s": {
+      "id": "scr_rise_max_slope_max_uS_s",
+      "label_zh": "SCR局部最大上升斜率最大值",
+      "family": "scr_rise",
+      "formula": "max(per-SCR max adjacent diff(signal)/dt)",
+      "basis": "qualified detector signal",
+      "unit": "uS/s",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "primary onset-eligible SCRs with onset in the half-open window; censored values retain catalogue status",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "scr_recovery_50_mean_s": {
+      "id": "scr_recovery_50_mean_s",
+      "label_zh": "SCR恢复50%时间均值",
+      "family": "scr_recovery",
+      "formula": "mean observed peak-to-first-crossing duration",
+      "basis": "qualified SCR",
+      "unit": "s",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "return_fraction": 0.5,
+        "threshold": "onset_level + (1-return_fraction)*amplitude",
+        "crossing": "first_downward_linear_interpolation",
+        "search_stop": "next_response_onset_or_segment_end"
+      },
+      "validity": "primary onset-eligible SCRs with onset in the half-open window; censored values retain catalogue status",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "scr_recovery_63_mean_s": {
+      "id": "scr_recovery_63_mean_s",
+      "label_zh": "SCR恢复63%时间均值",
+      "family": "scr_recovery",
+      "formula": "mean observed peak-to-first-crossing duration",
+      "basis": "qualified SCR",
+      "unit": "s",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "return_fraction": 0.63,
+        "threshold": "onset_level + (1-return_fraction)*amplitude",
+        "crossing": "first_downward_linear_interpolation",
+        "search_stop": "next_response_onset_or_segment_end"
+      },
+      "validity": "primary onset-eligible SCRs with onset in the half-open window; censored values retain catalogue status",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "scr_unrecovered_50_proportion": {
+      "id": "scr_unrecovered_50_proportion",
+      "label_zh": "未观察到恢复比例（含截尾）50%",
+      "family": "scr_recovery",
+      "formula": "right-censored responses / primary responses",
+      "basis": "qualified SCR",
+      "unit": "fraction",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "primary onset-eligible SCRs with onset in the half-open window; censored values retain catalogue status",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "scr_unrecovered_63_proportion": {
+      "id": "scr_unrecovered_63_proportion",
+      "label_zh": "未观察到恢复比例（含截尾）63%",
+      "family": "scr_recovery",
+      "formula": "right-censored responses / primary responses",
+      "basis": "qualified SCR",
+      "unit": "fraction",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "primary onset-eligible SCRs with onset in the half-open window; censored values retain catalogue status",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "scr_half_width_50_mean_s": {
+      "id": "scr_half_width_50_mean_s",
+      "label_zh": "SCR半高宽均值",
+      "family": "scr_width",
+      "formula": "mean(half-height fall crossing - rise crossing)",
+      "basis": "qualified SCR",
+      "unit": "s",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "height_fraction": 0.5,
+        "crossings": "first_upward_then_first_downward_linear_interpolation"
+      },
+      "validity": "primary onset-eligible SCRs with onset in the half-open window; censored values retain catalogue status",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "scr_isi_mean_s": {
+      "id": "scr_isi_mean_s",
+      "label_zh": "SCR起始间隔均值",
+      "family": "scr_isi",
+      "formula": "mean within-window consecutive same-segment onset intervals",
+      "basis": "qualified SCR",
+      "unit": "s",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "scope": "consecutive_onsets_within_window_and_same_segment",
+        "never_bridge_gaps": true
+      },
+      "validity": "primary onset-eligible SCRs with onset in the half-open window; censored values retain catalogue status",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "scr_isi_median_s": {
+      "id": "scr_isi_median_s",
+      "label_zh": "SCR起始间隔中位数",
+      "family": "scr_isi",
+      "formula": "median within-window consecutive same-segment onset intervals",
+      "basis": "qualified SCR",
+      "unit": "s",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "scope": "consecutive_onsets_within_window_and_same_segment",
+        "never_bridge_gaps": true
+      },
+      "validity": "primary onset-eligible SCRs with onset in the half-open window; censored values retain catalogue status",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "scr_isi_sd_s": {
+      "id": "scr_isi_sd_s",
+      "label_zh": "SCR起始间隔标准差",
+      "family": "scr_isi",
+      "formula": "sample SD(ddof=1)",
+      "basis": "qualified SCR",
+      "unit": "s",
+      "min_n": 2,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "ddof": 1,
+        "scope": "consecutive_onsets_within_window_and_same_segment",
+        "never_bridge_gaps": true
+      },
+      "validity": "primary onset-eligible SCRs with onset in the half-open window; censored values retain catalogue status",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "scr_isi_cv": {
+      "id": "scr_isi_cv",
+      "label_zh": "SCR起始间隔变异系数",
+      "family": "scr_isi",
+      "formula": "sample SD / mean",
+      "basis": "qualified SCR",
+      "unit": "dimensionless",
+      "min_n": 2,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "scope": "consecutive_onsets_within_window_and_same_segment",
+        "never_bridge_gaps": true
+      },
+      "validity": "primary onset-eligible SCRs with onset in the half-open window; censored values retain catalogue status",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "phasic_positive_auc_uS_s": {
+      "id": "phasic_positive_auc_uS_s",
+      "label_zh": "phasic正向积分",
+      "family": "phasic_integral",
+      "formula": "integral(max(y,0)) with exact linear zero-crossing split",
+      "basis": "phasic_uS",
+      "unit": "uS_s",
+      "min_n": 2,
+      "min_duration_s": 1e-12,
+      "parameters": {
+        "integration": "piecewise_linear_trapezoid",
+        "zero_crossing": "exact_linear_split",
+        "gap_policy": "do_not_bridge"
+      },
+      "validity": "at least two adjacent eligible phasic samples and positive clipped duration; gaps are not bridged",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "phasic_absolute_auc_uS_s": {
+      "id": "phasic_absolute_auc_uS_s",
+      "label_zh": "phasic绝对积分",
+      "family": "phasic_integral",
+      "formula": "integral(abs(y)) with exact linear zero-crossing split",
+      "basis": "phasic_uS",
+      "unit": "uS_s",
+      "min_n": 2,
+      "min_duration_s": 1e-12,
+      "parameters": {
+        "integration": "piecewise_linear_trapezoid",
+        "zero_crossing": "exact_linear_split",
+        "gap_policy": "do_not_bridge"
+      },
+      "validity": "at least two adjacent eligible phasic samples and positive clipped duration; gaps are not bridged",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "phasic_auc_per_valid_s": {
+      "id": "phasic_auc_per_valid_s",
+      "label_zh": "phasic带符号时间均值",
+      "family": "phasic_integral",
+      "formula": "signed AUC / valid phasic exposure",
+      "basis": "phasic_uS",
+      "unit": "uS",
+      "min_n": 2,
+      "min_duration_s": 1e-12,
+      "parameters": {},
+      "validity": "at least two adjacent eligible phasic samples and positive clipped duration; gaps are not bridged",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "phasic_positive_auc_per_valid_s": {
+      "id": "phasic_positive_auc_per_valid_s",
+      "label_zh": "phasic正向时间均值",
+      "family": "phasic_integral",
+      "formula": "positive AUC / valid phasic exposure",
+      "basis": "phasic_uS",
+      "unit": "uS",
+      "min_n": 2,
+      "min_duration_s": 1e-12,
+      "parameters": {},
+      "validity": "at least two adjacent eligible phasic samples and positive clipped duration; gaps are not bridged",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "phasic_absolute_auc_per_valid_s": {
+      "id": "phasic_absolute_auc_per_valid_s",
+      "label_zh": "phasic绝对时间均值",
+      "family": "phasic_integral",
+      "formula": "absolute AUC / valid phasic exposure",
+      "basis": "phasic_uS",
+      "unit": "uS",
+      "min_n": 2,
+      "min_duration_s": 1e-12,
+      "parameters": {},
+      "validity": "at least two adjacent eligible phasic samples and positive clipped duration; gaps are not bridged",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "event_response_probability": {
+      "id": "event_response_probability",
+      "label_zh": "事件响应概率",
+      "family": "trial_series",
+      "formula": "sum(response_present)/valid trial count",
+      "basis": "unique valid event trials",
+      "unit": "probability",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "unique valid unpolluted event trials; subject/session/condition/event_type series",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "event_nonresponse_rate": {
+      "id": "event_nonresponse_rate",
+      "label_zh": "事件无响应率",
+      "family": "trial_series",
+      "formula": "1-response_probability",
+      "basis": "unique valid event trials",
+      "unit": "probability",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "unique valid unpolluted event trials; subject/session/condition/event_type series",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "event_amplitude_zero_mean_uS": {
+      "id": "event_amplitude_zero_mean_uS",
+      "label_zh": "事件零包含最大SCR幅值均值",
+      "family": "trial_series",
+      "formula": "mean per-trial amplitude_zero_uS including nonresponse zeros",
+      "basis": "unique valid event trials",
+      "unit": "uS",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "unique valid unpolluted event trials; subject/session/condition/event_type series",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "event_amplitude_conditional_mean_uS": {
+      "id": "event_amplitude_conditional_mean_uS",
+      "label_zh": "事件响应条件幅值均值",
+      "family": "trial_series",
+      "formula": "mean responder-only trial maximum amplitude",
+      "basis": "responding valid event trials",
+      "unit": "uS",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "unique valid unpolluted event trials; subject/session/condition/event_type series",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "event_peak_latency_s": {
+      "id": "event_peak_latency_s",
+      "label_zh": "事件最大SCR峰潜伏期",
+      "family": "event_trial",
+      "formula": "peak_s of maximum linked SCR - event onset; earlier tie",
+      "basis": "unique event-SCR links",
+      "unit": "s",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "one valid unique event trial; clean baseline and response on the same physical basis",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "event_max_amplitude_baseline_percent": {
+      "id": "event_max_amplitude_baseline_percent",
+      "label_zh": "事件最大幅值/基线百分比",
+      "family": "event_trial",
+      "formula": "100*amplitude_zero_uS/B",
+      "basis": "clean baseline",
+      "unit": "%",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "baseline_min_uS": 1e-06
+      },
+      "validity": "one valid unique event trial; clean baseline and response on the same physical basis",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "event_response_change_baseline_percent": {
+      "id": "event_response_change_baseline_percent",
+      "label_zh": "事件响应变化/基线百分比",
+      "family": "event_trial",
+      "formula": "100*(mean clean response-B)/B",
+      "basis": "clean baseline and clean response",
+      "unit": "%",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "baseline_min_uS": 1e-06
+      },
+      "validity": "one valid unique event trial; clean baseline and response on the same physical basis",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "event_max_amplitude_baseline_z": {
+      "id": "event_max_amplitude_baseline_z",
+      "label_zh": "事件最大幅值/基线SD",
+      "family": "event_trial",
+      "formula": "amplitude_zero_uS/SD_baseline(ddof=1)",
+      "basis": "clean baseline",
+      "unit": "z",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "baseline_min_uS": 1e-06,
+        "baseline_sd_ddof": 1,
+        "minimum_baseline_n": 3
+      },
+      "validity": "one valid unique event trial; clean baseline and response on the same physical basis",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "event_response_change_baseline_z": {
+      "id": "event_response_change_baseline_z",
+      "label_zh": "事件响应变化/基线SD",
+      "family": "event_trial",
+      "formula": "(mean clean response-B)/SD_baseline(ddof=1)",
+      "basis": "clean baseline and clean response",
+      "unit": "z",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "baseline_min_uS": 1e-06,
+        "baseline_sd_ddof": 1,
+        "minimum_baseline_n": 3
+      },
+      "validity": "one valid unique event trial; clean baseline and response on the same physical basis",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "habituation_amplitude_slope_uS_per_trial": {
+      "id": "habituation_amplitude_slope_uS_per_trial",
+      "label_zh": "试次幅值趋势斜率",
+      "family": "habituation",
+      "formula": "OLS(amplitude_zero_uS ~ 1 + original_trial_ordinal)",
+      "basis": "valid event trials",
+      "unit": "uS/trial",
+      "min_n": 5,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "series_by": [
+          "condition",
+          "event_type"
+        ],
+        "min_slope_trials": 5,
+        "min_logit_trials": 8,
+        "min_decay_trials": 8,
+        "decay_max_rate": 10.0,
+        "decay_max_nfev": 1000
+      },
+      "validity": "valid event trials in original ordinal order; descriptive trend only",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "habituation_response_logit_slope_per_trial": {
+      "id": "habituation_response_logit_slope_per_trial",
+      "label_zh": "试次响应logit趋势斜率",
+      "family": "habituation",
+      "formula": "binomial GLM(response_present ~ 1 + original_trial_ordinal)",
+      "basis": "valid event trials",
+      "unit": "log-odds/trial",
+      "min_n": 8,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "series_by": [
+          "condition",
+          "event_type"
+        ],
+        "min_slope_trials": 5,
+        "min_logit_trials": 8,
+        "min_decay_trials": 8,
+        "decay_max_rate": 10.0,
+        "decay_max_nfev": 1000
+      },
+      "validity": "valid event trials in original ordinal order; descriptive trend only",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "habituation_response_probability_change": {
+      "id": "habituation_response_probability_change",
+      "label_zh": "试次响应概率变化",
+      "family": "habituation",
+      "formula": "fitted probability(last ordinal)-fitted probability(first ordinal)",
+      "basis": "valid event trials",
+      "unit": "probability",
+      "min_n": 8,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "series_by": [
+          "condition",
+          "event_type"
+        ],
+        "min_slope_trials": 5,
+        "min_logit_trials": 8,
+        "min_decay_trials": 8,
+        "decay_max_rate": 10.0,
+        "decay_max_nfev": 1000
+      },
+      "validity": "valid event trials in original ordinal order; descriptive trend only",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "habituation_decay_rate_per_trial": {
+      "id": "habituation_decay_rate_per_trial",
+      "label_zh": "试次幅值衰减率",
+      "family": "habituation",
+      "formula": "bounded fit c+a*exp(-k*(x-xmin)); k",
+      "basis": "valid event trials incl. zero responses",
+      "unit": "1/trial",
+      "min_n": 8,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "series_by": [
+          "condition",
+          "event_type"
+        ],
+        "min_slope_trials": 5,
+        "min_logit_trials": 8,
+        "min_decay_trials": 8,
+        "decay_max_rate": 10.0,
+        "decay_max_nfev": 1000
+      },
+      "validity": "valid event trials in original ordinal order; descriptive trend only",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "habituation_decay_tau_trials": {
+      "id": "habituation_decay_tau_trials",
+      "label_zh": "试次幅值衰减时间常数",
+      "family": "habituation",
+      "formula": "1/k from identifiable bounded exponential fit",
+      "basis": "valid event trials incl. zero responses",
+      "unit": "trials",
+      "min_n": 8,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "series_by": [
+          "condition",
+          "event_type"
+        ],
+        "min_slope_trials": 5,
+        "min_logit_trials": 8,
+        "min_decay_trials": 8,
+        "decay_max_rate": 10.0,
+        "decay_max_nfev": 1000
+      },
+      "validity": "valid event trials in original ordinal order; descriptive trend only",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "habituation_decay_asymptote_uS": {
+      "id": "habituation_decay_asymptote_uS",
+      "label_zh": "试次幅值衰减渐近值",
+      "family": "habituation",
+      "formula": "bounded fit c+a*exp(-k*(x-xmin)); c",
+      "basis": "valid event trials incl. zero responses",
+      "unit": "uS",
+      "min_n": 8,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "series_by": [
+          "condition",
+          "event_type"
+        ],
+        "min_slope_trials": 5,
+        "min_logit_trials": 8,
+        "min_decay_trials": 8,
+        "decay_max_rate": 10.0,
+        "decay_max_nfev": 1000
+      },
+      "validity": "valid event trials in original ordinal order; descriptive trend only",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "ns_scr_count": {
+      "id": "ns_scr_count",
+      "label_zh": "非事件相关SCR计数",
+      "family": "nonspecific",
+      "formula": "qualified non-event-associated onset count",
+      "basis": "complete annotation-covered onset exposure",
+      "unit": "count",
+      "min_n": 0,
+      "min_duration_s": 1e-12,
+      "parameters": {
+        "annotation_coverage": "explicit_complete_only",
+        "event_response_s": [
+          1.0,
+          4.0
+        ]
+      },
+      "validity": "explicit matching complete annotation coverage and positive onset exposure",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "ns_scr_rate": {
+      "id": "ns_scr_rate",
+      "label_zh": "非事件相关SCR速率",
+      "family": "nonspecific",
+      "formula": "60*count/onset exposure seconds",
+      "basis": "complete annotation-covered onset exposure",
+      "unit": "responses/min",
+      "min_n": 0,
+      "min_duration_s": 1e-12,
+      "parameters": {
+        "annotation_coverage": "explicit_complete_only",
+        "event_response_s": [
+          1.0,
+          4.0
+        ]
+      },
+      "validity": "explicit matching complete annotation coverage and positive onset exposure",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "ns_scr_amplitude_mean": {
+      "id": "ns_scr_amplitude_mean",
+      "label_zh": "非事件相关SCR幅值均值",
+      "family": "nonspecific",
+      "formula": "mean qualifying amplitude",
+      "basis": "complete annotation-covered SCRs",
+      "unit": "uS",
+      "min_n": 1,
+      "min_duration_s": 1e-12,
+      "parameters": {
+        "annotation_coverage": "explicit_complete_only",
+        "event_response_s": [
+          1.0,
+          4.0
+        ]
+      },
+      "validity": "explicit matching complete annotation coverage and positive onset exposure",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "ns_scr_amplitude_median": {
+      "id": "ns_scr_amplitude_median",
+      "label_zh": "非事件相关SCR幅值中位数",
+      "family": "nonspecific",
+      "formula": "median qualifying amplitude",
+      "basis": "complete annotation-covered SCRs",
+      "unit": "uS",
+      "min_n": 1,
+      "min_duration_s": 1e-12,
+      "parameters": {
+        "annotation_coverage": "explicit_complete_only",
+        "event_response_s": [
+          1.0,
+          4.0
+        ]
+      },
+      "validity": "explicit matching complete annotation coverage and positive onset exposure",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "ns_scr_amplitude_sd": {
+      "id": "ns_scr_amplitude_sd",
+      "label_zh": "非事件相关SCR幅值标准差",
+      "family": "nonspecific",
+      "formula": "sample SD(ddof=1)",
+      "basis": "complete annotation-covered SCRs",
+      "unit": "uS",
+      "min_n": 2,
+      "min_duration_s": 1e-12,
+      "parameters": {
+        "ddof": 1,
+        "annotation_coverage": "explicit_complete_only",
+        "event_response_s": [
+          1.0,
+          4.0
+        ]
+      },
+      "validity": "explicit matching complete annotation coverage and positive onset exposure",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "ns_scr_amplitude_max": {
+      "id": "ns_scr_amplitude_max",
+      "label_zh": "非事件相关SCR最大幅值",
+      "family": "nonspecific",
+      "formula": "max qualifying amplitude",
+      "basis": "complete annotation-covered SCRs",
+      "unit": "uS",
+      "min_n": 1,
+      "min_duration_s": 1e-12,
+      "parameters": {
+        "annotation_coverage": "explicit_complete_only",
+        "event_response_s": [
+          1.0,
+          4.0
+        ]
+      },
+      "validity": "explicit matching complete annotation coverage and positive onset exposure",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "ns_scr_amplitude_p90": {
+      "id": "ns_scr_amplitude_p90",
+      "label_zh": "非事件相关SCR幅值第90百分位",
+      "family": "nonspecific",
+      "formula": "linear percentile 90",
+      "basis": "complete annotation-covered SCRs",
+      "unit": "uS",
+      "min_n": 1,
+      "min_duration_s": 1e-12,
+      "parameters": {
+        "percentile_method": "linear",
+        "percentile": 90,
+        "annotation_coverage": "explicit_complete_only",
+        "event_response_s": [
+          1.0,
+          4.0
+        ]
+      },
+      "validity": "explicit matching complete annotation coverage and positive onset exposure",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "ns_scr_amplitude_iqr": {
+      "id": "ns_scr_amplitude_iqr",
+      "label_zh": "非事件相关SCR幅值四分位距",
+      "family": "nonspecific",
+      "formula": "linear Q75-Q25",
+      "basis": "complete annotation-covered SCRs",
+      "unit": "uS",
+      "min_n": 2,
+      "min_duration_s": 1e-12,
+      "parameters": {
+        "percentile_method": "linear",
+        "quartiles": [
+          25,
+          75
+        ],
+        "annotation_coverage": "explicit_complete_only",
+        "event_response_s": [
+          1.0,
+          4.0
+        ]
+      },
+      "validity": "explicit matching complete annotation coverage and positive onset exposure",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "clean_min": {
+      "id": "clean_min",
+      "label_zh": "clean最小值",
+      "family": "sample",
+      "formula": "min(x)",
+      "basis": "clean_uS",
+      "unit": "uS",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "finite eligible samples/support; sample-based unless formula explicitly integrates time",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "clean_max": {
+      "id": "clean_max",
+      "label_zh": "clean最大值",
+      "family": "sample",
+      "formula": "max(x)",
+      "basis": "clean_uS",
+      "unit": "uS",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "finite eligible samples/support; sample-based unless formula explicitly integrates time",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "clean_p05": {
+      "id": "clean_p05",
+      "label_zh": "clean第5百分位",
+      "family": "sample",
+      "formula": "linear percentile 5",
+      "basis": "clean_uS",
+      "unit": "uS",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "percentile": 5,
+        "percentile_method": "linear"
+      },
+      "validity": "finite eligible samples/support; sample-based unless formula explicitly integrates time",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "clean_p25": {
+      "id": "clean_p25",
+      "label_zh": "clean第25百分位",
+      "family": "sample",
+      "formula": "linear percentile 25",
+      "basis": "clean_uS",
+      "unit": "uS",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "percentile": 25,
+        "percentile_method": "linear"
+      },
+      "validity": "finite eligible samples/support; sample-based unless formula explicitly integrates time",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "clean_p75": {
+      "id": "clean_p75",
+      "label_zh": "clean第75百分位",
+      "family": "sample",
+      "formula": "linear percentile 75",
+      "basis": "clean_uS",
+      "unit": "uS",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "percentile": 75,
+        "percentile_method": "linear"
+      },
+      "validity": "finite eligible samples/support; sample-based unless formula explicitly integrates time",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "clean_p95": {
+      "id": "clean_p95",
+      "label_zh": "clean第95百分位",
+      "family": "sample",
+      "formula": "linear percentile 95",
+      "basis": "clean_uS",
+      "unit": "uS",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "percentile": 95,
+        "percentile_method": "linear"
+      },
+      "validity": "finite eligible samples/support; sample-based unless formula explicitly integrates time",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "clean_skewness": {
+      "id": "clean_skewness",
+      "label_zh": "clean偏度",
+      "family": "sample",
+      "formula": "adjusted Fisher-Pearson skewness; bias=False",
+      "basis": "clean_uS",
+      "unit": "dimensionless",
+      "min_n": 3,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "bias": false,
+        "constant_policy": "unavailable"
+      },
+      "validity": "finite eligible samples/support; sample-based unless formula explicitly integrates time",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "clean_kurtosis": {
+      "id": "clean_kurtosis",
+      "label_zh": "clean超额峰度",
+      "family": "sample",
+      "formula": "unbiased Fisher excess kurtosis; bias=False",
+      "basis": "clean_uS",
+      "unit": "dimensionless",
+      "min_n": 4,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "bias": false,
+        "constant_policy": "unavailable",
+        "fisher": true
+      },
+      "validity": "finite eligible samples/support; sample-based unless formula explicitly integrates time",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "clean_mad": {
+      "id": "clean_mad",
+      "label_zh": "clean中位绝对偏差",
+      "family": "sample",
+      "formula": "median(abs(x-median(x))); unscaled",
+      "basis": "clean_uS",
+      "unit": "uS",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "scale": 1.0
+      },
+      "validity": "finite eligible samples/support; sample-based unless formula explicitly integrates time",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "tonic_min": {
+      "id": "tonic_min",
+      "label_zh": "tonic最小值",
+      "family": "tonic",
+      "formula": "min(x)",
+      "basis": "tonic_uS",
+      "unit": "uS",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "finite eligible samples/support; sample-based unless formula explicitly integrates time",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "tonic_max": {
+      "id": "tonic_max",
+      "label_zh": "tonic最大值",
+      "family": "tonic",
+      "formula": "max(x)",
+      "basis": "tonic_uS",
+      "unit": "uS",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "finite eligible samples/support; sample-based unless formula explicitly integrates time",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "tonic_p05": {
+      "id": "tonic_p05",
+      "label_zh": "tonic第5百分位",
+      "family": "tonic",
+      "formula": "linear percentile 5",
+      "basis": "tonic_uS",
+      "unit": "uS",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "percentile": 5,
+        "percentile_method": "linear"
+      },
+      "validity": "finite eligible samples/support; sample-based unless formula explicitly integrates time",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "tonic_p25": {
+      "id": "tonic_p25",
+      "label_zh": "tonic第25百分位",
+      "family": "tonic",
+      "formula": "linear percentile 25",
+      "basis": "tonic_uS",
+      "unit": "uS",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "percentile": 25,
+        "percentile_method": "linear"
+      },
+      "validity": "finite eligible samples/support; sample-based unless formula explicitly integrates time",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "tonic_p75": {
+      "id": "tonic_p75",
+      "label_zh": "tonic第75百分位",
+      "family": "tonic",
+      "formula": "linear percentile 75",
+      "basis": "tonic_uS",
+      "unit": "uS",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "percentile": 75,
+        "percentile_method": "linear"
+      },
+      "validity": "finite eligible samples/support; sample-based unless formula explicitly integrates time",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "tonic_p95": {
+      "id": "tonic_p95",
+      "label_zh": "tonic第95百分位",
+      "family": "tonic",
+      "formula": "linear percentile 95",
+      "basis": "tonic_uS",
+      "unit": "uS",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "percentile": 95,
+        "percentile_method": "linear"
+      },
+      "validity": "finite eligible samples/support; sample-based unless formula explicitly integrates time",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "tonic_skewness": {
+      "id": "tonic_skewness",
+      "label_zh": "tonic偏度",
+      "family": "tonic",
+      "formula": "adjusted Fisher-Pearson skewness; bias=False",
+      "basis": "tonic_uS",
+      "unit": "dimensionless",
+      "min_n": 3,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "bias": false,
+        "constant_policy": "unavailable"
+      },
+      "validity": "finite eligible samples/support; sample-based unless formula explicitly integrates time",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "tonic_kurtosis": {
+      "id": "tonic_kurtosis",
+      "label_zh": "tonic超额峰度",
+      "family": "tonic",
+      "formula": "unbiased Fisher excess kurtosis; bias=False",
+      "basis": "tonic_uS",
+      "unit": "dimensionless",
+      "min_n": 4,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "bias": false,
+        "constant_policy": "unavailable",
+        "fisher": true
+      },
+      "validity": "finite eligible samples/support; sample-based unless formula explicitly integrates time",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "tonic_mad": {
+      "id": "tonic_mad",
+      "label_zh": "tonic中位绝对偏差",
+      "family": "tonic",
+      "formula": "median(abs(x-median(x))); unscaled",
+      "basis": "tonic_uS",
+      "unit": "uS",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "scale": 1.0
+      },
+      "validity": "finite eligible samples/support; sample-based unless formula explicitly integrates time",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "scr_amplitude_sqrt_mean": {
+      "id": "scr_amplitude_sqrt_mean",
+      "label_zh": "SCR幅值平方根均值",
+      "family": "scr_distribution",
+      "formula": "mean(sqrt(A_uS))",
+      "basis": "qualified SCR amplitude_uS",
+      "unit": "sqrt_uS",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "transform_before_aggregation": true,
+        "amplitude_input_unit": "uS",
+        "reference_scope": "same_recording_subject_session_channel_across_conditions",
+        "reference_population": "qualified_onset_eligible_responses"
+      },
+      "validity": "primary onset-eligible SCRs with onset in the half-open window; censored values retain catalogue status",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "scr_amplitude_log1p_mean": {
+      "id": "scr_amplitude_log1p_mean",
+      "label_zh": "SCR幅值对数ln(1+A/1uS)均值",
+      "family": "scr_distribution",
+      "formula": "mean(ln(1+A_uS/1uS))",
+      "basis": "qualified SCR amplitude_uS",
+      "unit": "dimensionless",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "transform_before_aggregation": true,
+        "amplitude_input_unit": "uS",
+        "reference_scope": "same_recording_subject_session_channel_across_conditions",
+        "reference_population": "qualified_onset_eligible_responses",
+        "log_base": "e",
+        "reference_amplitude_uS": 1.0
+      },
+      "validity": "primary onset-eligible SCRs with onset in the half-open window; censored values retain catalogue status",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "scr_amplitude_recording_z_mean": {
+      "id": "scr_amplitude_recording_z_mean",
+      "label_zh": "SCR幅值当前记录Z值均值",
+      "family": "scr_distribution",
+      "formula": "mean((A-reference_mean)/reference_sample_SD)",
+      "basis": "qualified SCR amplitude_uS",
+      "unit": "z",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "transform_before_aggregation": true,
+        "amplitude_input_unit": "uS",
+        "reference_scope": "same_recording_subject_session_channel_across_conditions",
+        "reference_population": "qualified_onset_eligible_responses",
+        "reference_ddof": 1,
+        "minimum_reference_n": 2,
+        "zero_sd_policy": "unavailable"
+      },
+      "validity": "primary onset-eligible SCRs with onset in the half-open window; censored values retain catalogue status",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "scr_amplitude_recording_max_fraction_mean": {
+      "id": "scr_amplitude_recording_max_fraction_mean",
+      "label_zh": "SCR幅值当前记录最大值校正均值",
+      "family": "scr_distribution",
+      "formula": "mean(A/reference_max)",
+      "basis": "qualified SCR amplitude_uS",
+      "unit": "fraction",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "transform_before_aggregation": true,
+        "amplitude_input_unit": "uS",
+        "reference_scope": "same_recording_subject_session_channel_across_conditions",
+        "reference_population": "qualified_onset_eligible_responses",
+        "correction": "A/max(A); no minimum subtraction",
+        "zero_max_policy": "unavailable"
+      },
+      "validity": "primary onset-eligible SCRs with onset in the half-open window; censored values retain catalogue status",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "event_amplitude_zero_sqrt_mean": {
+      "id": "event_amplitude_zero_sqrt_mean",
+      "label_zh": "事件零包含幅值平方根均值",
+      "family": "trial_series",
+      "formula": "mean(sqrt(A_uS))",
+      "basis": "valid zero-inclusive event trials",
+      "unit": "sqrt_uS",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "transform_before_aggregation": true,
+        "amplitude_input_unit": "uS",
+        "reference_scope": "same_recording_subject_session_channel_across_conditions",
+        "reference_population": "all_valid_trials_including_nonresponse_zeros"
+      },
+      "validity": "unique valid unpolluted event trials; subject/session/condition/event_type series",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "event_amplitude_zero_log1p_mean": {
+      "id": "event_amplitude_zero_log1p_mean",
+      "label_zh": "事件零包含幅值对数ln(1+A/1uS)均值",
+      "family": "trial_series",
+      "formula": "mean(ln(1+A_uS/1uS))",
+      "basis": "valid zero-inclusive event trials",
+      "unit": "dimensionless",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "transform_before_aggregation": true,
+        "amplitude_input_unit": "uS",
+        "reference_scope": "same_recording_subject_session_channel_across_conditions",
+        "reference_population": "all_valid_trials_including_nonresponse_zeros",
+        "log_base": "e",
+        "reference_amplitude_uS": 1.0
+      },
+      "validity": "unique valid unpolluted event trials; subject/session/condition/event_type series",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "event_amplitude_zero_recording_z_mean": {
+      "id": "event_amplitude_zero_recording_z_mean",
+      "label_zh": "事件零包含幅值当前记录Z值均值",
+      "family": "trial_series",
+      "formula": "mean((A-reference_mean)/reference_sample_SD)",
+      "basis": "valid zero-inclusive event trials",
+      "unit": "z",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "transform_before_aggregation": true,
+        "amplitude_input_unit": "uS",
+        "reference_scope": "same_recording_subject_session_channel_across_conditions",
+        "reference_population": "all_valid_trials_including_nonresponse_zeros",
+        "reference_ddof": 1,
+        "minimum_reference_n": 2,
+        "zero_sd_policy": "unavailable"
+      },
+      "validity": "unique valid unpolluted event trials; subject/session/condition/event_type series",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "event_amplitude_zero_recording_max_fraction_mean": {
+      "id": "event_amplitude_zero_recording_max_fraction_mean",
+      "label_zh": "事件零包含幅值当前记录最大值校正均值",
+      "family": "trial_series",
+      "formula": "mean(A/reference_max)",
+      "basis": "valid zero-inclusive event trials",
+      "unit": "fraction",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "transform_before_aggregation": true,
+        "amplitude_input_unit": "uS",
+        "reference_scope": "same_recording_subject_session_channel_across_conditions",
+        "reference_population": "all_valid_trials_including_nonresponse_zeros",
+        "correction": "A/max(A); no minimum subtraction",
+        "zero_max_policy": "unavailable"
+      },
+      "validity": "unique valid unpolluted event trials; subject/session/condition/event_type series",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "scr_rise_time_median": {
+      "id": "scr_rise_time_median",
+      "label_zh": "SCR上升时间中位数",
+      "family": "scr_rise",
+      "formula": "median(observed durations)",
+      "basis": "qualified SCR completed durations",
+      "unit": "s",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {},
+      "validity": "primary onset-eligible SCRs with onset in the half-open window; censored values retain catalogue status",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "scr_rise_time_sd": {
+      "id": "scr_rise_time_sd",
+      "label_zh": "SCR上升时间标准差",
+      "family": "scr_rise",
+      "formula": "sample SD(observed durations), ddof=1",
+      "basis": "qualified SCR completed durations",
+      "unit": "s",
+      "min_n": 2,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "ddof": 1
+      },
+      "validity": "primary onset-eligible SCRs with onset in the half-open window; censored values retain catalogue status",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "scr_recovery_time_median": {
+      "id": "scr_recovery_time_median",
+      "label_zh": "SCR配置恢复时间中位数",
+      "family": "scr_recovery",
+      "formula": "median(observed durations)",
+      "basis": "qualified SCR completed durations",
+      "unit": "s",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "return_fraction": 0.5,
+        "threshold": "onset_level + (1-return_fraction)*amplitude",
+        "crossing": "first_downward_linear_interpolation",
+        "search_stop": "next_response_onset_or_segment_end",
+        "censored_policy": "completed_only; retain_exclusion_reason"
+      },
+      "validity": "primary onset-eligible SCRs with onset in the half-open window; censored values retain catalogue status",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "scr_recovery_time_sd": {
+      "id": "scr_recovery_time_sd",
+      "label_zh": "SCR配置恢复时间标准差",
+      "family": "scr_recovery",
+      "formula": "sample SD(observed durations), ddof=1",
+      "basis": "qualified SCR completed durations",
+      "unit": "s",
+      "min_n": 2,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "ddof": 1,
+        "return_fraction": 0.5,
+        "threshold": "onset_level + (1-return_fraction)*amplitude",
+        "crossing": "first_downward_linear_interpolation",
+        "search_stop": "next_response_onset_or_segment_end",
+        "censored_policy": "completed_only; retain_exclusion_reason"
+      },
+      "validity": "primary onset-eligible SCRs with onset in the half-open window; censored values retain catalogue status",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "scr_recovery_50_median_s": {
+      "id": "scr_recovery_50_median_s",
+      "label_zh": "SCR恢复50%时间中位数",
+      "family": "scr_recovery",
+      "formula": "median(observed durations)",
+      "basis": "qualified SCR completed durations",
+      "unit": "s",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "return_fraction": 0.5,
+        "threshold": "onset_level + (1-return_fraction)*amplitude",
+        "crossing": "first_downward_linear_interpolation",
+        "search_stop": "next_response_onset_or_segment_end",
+        "censored_policy": "completed_only; retain_exclusion_reason"
+      },
+      "validity": "primary onset-eligible SCRs with onset in the half-open window; censored values retain catalogue status",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "scr_recovery_50_sd_s": {
+      "id": "scr_recovery_50_sd_s",
+      "label_zh": "SCR恢复50%时间标准差",
+      "family": "scr_recovery",
+      "formula": "sample SD(observed durations), ddof=1",
+      "basis": "qualified SCR completed durations",
+      "unit": "s",
+      "min_n": 2,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "ddof": 1,
+        "return_fraction": 0.5,
+        "threshold": "onset_level + (1-return_fraction)*amplitude",
+        "crossing": "first_downward_linear_interpolation",
+        "search_stop": "next_response_onset_or_segment_end",
+        "censored_policy": "completed_only; retain_exclusion_reason"
+      },
+      "validity": "primary onset-eligible SCRs with onset in the half-open window; censored values retain catalogue status",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "scr_recovery_63_median_s": {
+      "id": "scr_recovery_63_median_s",
+      "label_zh": "SCR恢复63%时间中位数",
+      "family": "scr_recovery",
+      "formula": "median(observed durations)",
+      "basis": "qualified SCR completed durations",
+      "unit": "s",
+      "min_n": 1,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "return_fraction": 0.63,
+        "threshold": "onset_level + (1-return_fraction)*amplitude",
+        "crossing": "first_downward_linear_interpolation",
+        "search_stop": "next_response_onset_or_segment_end",
+        "censored_policy": "completed_only; retain_exclusion_reason"
+      },
+      "validity": "primary onset-eligible SCRs with onset in the half-open window; censored values retain catalogue status",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "scr_recovery_63_sd_s": {
+      "id": "scr_recovery_63_sd_s",
+      "label_zh": "SCR恢复63%时间标准差",
+      "family": "scr_recovery",
+      "formula": "sample SD(observed durations), ddof=1",
+      "basis": "qualified SCR completed durations",
+      "unit": "s",
+      "min_n": 2,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "ddof": 1,
+        "return_fraction": 0.63,
+        "threshold": "onset_level + (1-return_fraction)*amplitude",
+        "crossing": "first_downward_linear_interpolation",
+        "search_stop": "next_response_onset_or_segment_end",
+        "censored_policy": "completed_only; retain_exclusion_reason"
+      },
+      "validity": "primary onset-eligible SCRs with onset in the half-open window; censored values retain catalogue status",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "clean_bandpower_eda_045_025_uS2": {
+      "id": "clean_bandpower_eda_045_025_uS2",
+      "label_zh": "clean频带功率：eda_045_025",
+      "family": "spectral",
+      "formula": "Welch PSD at exact band edges; linear interpolation then trapezoid",
+      "basis": "clean_uS",
+      "unit": "uS2",
+      "min_n": 2,
+      "min_duration_s": 384.0,
+      "parameters": {
+        "band": {
+          "id": "eda_045_025",
+          "low_hz": 0.045,
+          "high_hz": 0.25
+        },
+        "segment_s": 256.0,
+        "overlap": 0.5,
+        "window": "hann",
+        "detrend": "constant",
+        "min_segments": 2,
+        "min_cycles": 2.0,
+        "normalization_band_hz": [
+          0.01,
+          0.5
+        ]
+      },
+      "validity": "single contiguous eligible uniform clean window",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "clean_bandpower_eda_045_025_normalized": {
+      "id": "clean_bandpower_eda_045_025_normalized",
+      "label_zh": "clean频带归一化功率：eda_045_025",
+      "family": "spectral",
+      "formula": "band power / configured normalization-band power",
+      "basis": "clean_uS",
+      "unit": "fraction",
+      "min_n": 2,
+      "min_duration_s": 384.0,
+      "parameters": {
+        "band": {
+          "id": "eda_045_025",
+          "low_hz": 0.045,
+          "high_hz": 0.25
+        },
+        "segment_s": 256.0,
+        "overlap": 0.5,
+        "window": "hann",
+        "detrend": "constant",
+        "min_segments": 2,
+        "min_cycles": 2.0,
+        "normalization_band_hz": [
+          0.01,
+          0.5
+        ]
+      },
+      "validity": "single contiguous eligible uniform clean window",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "clean_autocorr_lag_1s": {
+      "id": "clean_autocorr_lag_1s",
+      "label_zh": "clean自相关：1s",
+      "family": "autocorrelation",
+      "formula": "Pearson(clean[:-k],clean[k:])",
+      "basis": "clean_uS",
+      "unit": "correlation",
+      "min_n": 20,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "lag_s": 1.0,
+        "min_pairs": 20,
+        "grid_tolerance_s": 1e-06
+      },
+      "validity": "single contiguous eligible uniform clean window; exact grid lag",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "clean_autocorr_lag_5s": {
+      "id": "clean_autocorr_lag_5s",
+      "label_zh": "clean自相关：5s",
+      "family": "autocorrelation",
+      "formula": "Pearson(clean[:-k],clean[k:])",
+      "basis": "clean_uS",
+      "unit": "correlation",
+      "min_n": 20,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "lag_s": 5.0,
+        "min_pairs": 20,
+        "grid_tolerance_s": 1e-06
+      },
+      "validity": "single contiguous eligible uniform clean window; exact grid lag",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "clean_autocorr_lag_10s": {
+      "id": "clean_autocorr_lag_10s",
+      "label_zh": "clean自相关：10s",
+      "family": "autocorrelation",
+      "formula": "Pearson(clean[:-k],clean[k:])",
+      "basis": "clean_uS",
+      "unit": "correlation",
+      "min_n": 20,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "lag_s": 10.0,
+        "min_pairs": 20,
+        "grid_tolerance_s": 1e-06
+      },
+      "validity": "single contiguous eligible uniform clean window; exact grid lag",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "clean_sample_entropy": {
+      "id": "clean_sample_entropy",
+      "label_zh": "clean样本熵",
+      "family": "complexity",
+      "formula": "-ln(A/B), unordered non-self Chebyshev template matches, nats",
+      "basis": "clean_uS",
+      "unit": "nats",
+      "min_n": 200,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "enabled": true,
+        "basis": "clean",
+        "min_samples": 200,
+        "max_samples": 5000,
+        "max_pair_comparisons": 25000000,
+        "sampen": {
+          "m": 2,
+          "delay": 1,
+          "r_mode": "sd_fraction",
+          "r": 0.2
+        },
+        "permen": {
+          "dimension": 3,
+          "delay": 1,
+          "normalize": true,
+          "ties": "stable"
+        },
+        "dfa": {
+          "order": 1,
+          "min_samples": 256,
+          "min_scale": 4,
+          "max_scale_fraction": 0.25,
+          "scale_count": 10,
+          "min_scales": 6
+        }
+      },
+      "validity": "single contiguous eligible uniform clean window",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "clean_permutation_entropy": {
+      "id": "clean_permutation_entropy",
+      "label_zh": "clean排列熵",
+      "family": "complexity",
+      "formula": "Shannon ordinal-pattern entropy, optionally /ln(m!)",
+      "basis": "clean_uS",
+      "unit": "dimensionless",
+      "min_n": 200,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "enabled": true,
+        "basis": "clean",
+        "min_samples": 200,
+        "max_samples": 5000,
+        "max_pair_comparisons": 25000000,
+        "sampen": {
+          "m": 2,
+          "delay": 1,
+          "r_mode": "sd_fraction",
+          "r": 0.2
+        },
+        "permen": {
+          "dimension": 3,
+          "delay": 1,
+          "normalize": true,
+          "ties": "stable"
+        },
+        "dfa": {
+          "order": 1,
+          "min_samples": 256,
+          "min_scale": 4,
+          "max_scale_fraction": 0.25,
+          "scale_count": 10,
+          "min_scales": 6
+        }
+      },
+      "validity": "single contiguous eligible uniform clean window",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    },
+    "clean_dfa_alpha": {
+      "id": "clean_dfa_alpha",
+      "label_zh": "clean DFA指数",
+      "family": "complexity",
+      "formula": "OLS slope(log F(s) ~ log s), order-1 detrended profile",
+      "basis": "clean_uS",
+      "unit": "dimensionless",
+      "min_n": 256,
+      "min_duration_s": 0.0,
+      "parameters": {
+        "enabled": true,
+        "basis": "clean",
+        "min_samples": 200,
+        "max_samples": 5000,
+        "max_pair_comparisons": 25000000,
+        "sampen": {
+          "m": 2,
+          "delay": 1,
+          "r_mode": "sd_fraction",
+          "r": 0.2
+        },
+        "permen": {
+          "dimension": 3,
+          "delay": 1,
+          "normalize": true,
+          "ties": "stable"
+        },
+        "dfa": {
+          "order": 1,
+          "min_samples": 256,
+          "min_scale": 4,
+          "max_scale_fraction": 0.25,
+          "scale_count": 10,
+          "min_scales": 6
+        }
+      },
+      "validity": "single contiguous eligible uniform clean window",
+      "qualification": "experimental_engineering_checked_not_real_data_qualified"
+    }
+  },
+  "note": "Offline snapshot only. Recheck installed runtime. Raw local paths may occur in capabilities."
+}

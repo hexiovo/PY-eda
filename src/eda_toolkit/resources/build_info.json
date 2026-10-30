@@ -1,12 +1,12 @@
 {
-  "version": "0.3.0",
+  "version": "0.3.1",
   "fingerprint_scope": "package_python_except_ui_v1",
   "source_fingerprint_scope": "package_python_except_ui_v1",
-  "source_fingerprint": "784b31de41b2a7acb8ae7b401db6a231725e7c87f71df6844dcdbc5a2a1d393a",
+  "source_fingerprint": "d500eb631a0833ee626f78eb93196b935aa5fd887889f0763760a2e353d616f8",
   "source_files": {
-    "__init__.py": "9f468600e1da45b99fafcff796de0a472cc2961189d7798f2edd29692fe9be9d",
+    "__init__.py": "69ad73927c231d94bb252ab82e6ac3bbb0e37299dae6ec89551523aae9e04c4f",
     "__main__.py": "7db32676c1b135724289e1c84466c41875d7d9a6be223dfe8af075fb2acc60fc",
-    "capabilities.py": "adbb284d8c4e4df1495fc8ad49b8f916290a8cf0b8d014e2621a11272e3b79cd",
+    "capabilities.py": "c3f319c504e061aa2043f7cdd21d17f1d202cbca8cbe87fb5027ae171e5d9721",
     "cli.py": "0fbf0ec563238469c6b3b50e0c311aa57b9e2aac3a4235d12ef58c54ddbb64d2",
     "config.py": "76fb5598319dd30e2aac6299228bb865a655666f5b8d22aeea17daac7a98cc5c",
     "contracts.py": "b7dd051393073ee1717bedc07a1a07f4e233239e87b4b28561032b0ea5a0fe09",
@@ -20,8 +20,11 @@
     "core_statistics.py": "558a4121a9f1bc631bdda5a6f1aa948efcab65b3523f7a03d9aa9a5744759cff",
     "core_sync.py": "b59e05c579448abc33fac89ddec6321631627bf91d27b1d64744290e4afd73a7",
     "demo.py": "758ed88df26040eeadb45d3671d05c900b8942276bcf0a0ef6ea502895089853",
-    "driver_decompose.py": "dbd0063efa8e1ed73e110dfa761185bce1492d0a7011edd5193774dcc9c99e7f",
+    "dependency_paths.py": "991fca4d4d10305b57b4578eab4d799be352acb83db62e3d84bf17eaa0c03aec",
+    "driver_decompose.py": "cf85e7d1e3d954a4e282e011fd2408b637cc16a509bc2581eec82550d936136a",
+    "environment_service.py": "2a220a115eebdf8bf7bce2ad896902894bcea2246b7ce63c7f0bf1b4c8c32d1c",
     "errors.py": "1b4119031dddcd76bf05b35a1af82eb921ad7b1efa5e754f12e142162d8a8dd8",
+    "gpu_support.py": "2167bd0d6e49ed66b41b4fba2091a9b065731d3f0c6170698f367f0ade249ecd",
     "marker_store.py": "8da30a9a30d7b5cbafc7b962378aa0714eb34135e700dbd186049f95e907be69",
     "metrics_common.py": "141053156de937d36a47bc860a99531bcba081868f5b947048850a6669874f55",
     "metrics_driver.py": "bfd97da6fda62b86a5daeb078fc69cffb70734b9fa56feaa5627b72590f83a17",
@@ -29,12 +32,12 @@
     "metrics_nonspecific.py": "e90f1272b36ed0347b26ea42ed7c6339537cc023bdf09c1ddbecd2bd1425e2d8",
     "metrics_spectral_complexity.py": "59e7d13d4351d64737a79cf6fa860300dfac7d26b267f09b3d0dc0783937a46b",
     "metrics_trials.py": "702b06e0f3f4c9fcada648cb516fa65fbe86ad0ea8e545d329e7ec2cf1beebca",
-    "pipeline.py": "285341327f2679b4a8aa5b44304c476d8ced7c8c0f5b118b59162ae63c4232c2",
+    "pipeline.py": "44ffafbe127f76072f2d91cce7ecdc4ae59dbcb76ca32331dc8a1ea289643898",
     "project_store.py": "743d6408ce1b255931098b57274a37e07c91259539021f5ed93b7b66fd5dd200",
     "resources/__init__.py": "37417394732d2e3d5922aeee87da4dc00b7be2a2adb99d4a8e7dba7f54129448",
     "resources/templates/__init__.py": "36aed5f6edfcadc6370a1760b568048309a83e9d82a110ae206478a61a7bb2c6",
     "runtime_events.py": "cc7efafaba370245ae7f464e3bf445d3cdbf636c596e7063abbfcd376d26e5e0",
-    "runtime_identity.py": "331a7aebaa8b867b4eb427508ba0a9ce75f98f5c0576e888ef70b4ea22324042",
+    "runtime_identity.py": "493ff1ca8b27967c8441986478b4775e8e21eee2034bb5d75e7fa9bdfed26287",
     "runtime_logging.py": "1de70666e9da672b00f8d18142bbb14512859e9649c4f59e6044a5267d463ff0",
     "runtime_preflight.py": "aa1237c8c5caaf06392da06784d306bd963a9768a8bf1d739198aeedcbd4dff7",
     "task_queue.py": "30b3e692fad984cdc0e5a3e3d85de8ceb1748c382af071d19bad1a012082c7a4",
@@ -42,8 +45,8 @@
   },
   "python": "3.14.8 | packaged by Anaconda, Inc. | (main, Oct  1 2026, 20:25:10) [MSC v.1942 64 bit (AMD64)]",
   "version_sources": {
-    "pyproject.toml": "0.3.0",
-    "eda_toolkit.__version__": "0.3.0",
-    "editable_distribution": "0.3.0"
+    "pyproject.toml": "0.3.1",
+    "eda_toolkit.__version__": "0.3.1",
+    "editable_distribution": "0.3.1"
   }
 }

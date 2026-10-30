@@ -16,7 +16,7 @@ from urllib.request import urlopen
 from xml.sax.saxutils import escape
 
 ROOT = Path(__file__).resolve().parents[1]
-SCREENSHOTS = ROOT / "artifacts" / "verification" / "driver-v0.3.0" / "help-screenshots"
+SCREENSHOTS = ROOT / "artifacts" / "verification" / "v0.3.1" / "help-screenshots"
 HELP_DIR = ROOT / "src" / "eda_toolkit" / "resources" / "help"
 FONT_DIR = HELP_DIR / "fonts"
 PDF_PATH = HELP_DIR / "EDA使用指南.pdf"
@@ -236,7 +236,7 @@ def _capture_gui() -> list[tuple[str, str]]:
     from eda_toolkit.ui.app import create_window
 
     SCREENSHOTS.mkdir(parents=True, exist_ok=True)
-    example_dir = ROOT / "examples" / "synthetic_demo"
+    example_dir = ROOT / "examples" / "current_synthetic_demo"
     example_config = json.loads((example_dir / "single.json").read_text(encoding="utf-8"))
     example_config = resolve_config(example_config)
     temporary_root = Path(tempfile.mkdtemp(prefix="eda-help-demo-"))
@@ -267,6 +267,10 @@ def _capture_gui() -> list[tuple[str, str]]:
     try:
         window, state = create_window(config)
         app = state["app"]
+        # The offscreen Qt platform exposes only a 400×400 logical screen.
+        # Use a fixed capture viewport so current screen-fit startup sizing does
+        # not crop the documentation screenshots.
+        window.resize(1420, 920)
         window.show()
         app.processEvents()
         _save_grab(window, SCREENSHOTS / captures[0][0])
@@ -572,13 +576,13 @@ def _build_pdf(captures: list[tuple[str, str]], fonts: dict[str, Path]) -> None:
             canvas.rect(0, page_h - 8 * mm, page_w, 8 * mm, fill=1, stroke=0)
             canvas.setFillColor(colors.white)
             canvas.setFont("EDAChinese", 8.5)
-            canvas.drawString(17 * mm, page_h - 5.5 * mm, "EDA Toolkit 0.3.0  ·  使用指南")
+            canvas.drawString(17 * mm, page_h - 5.5 * mm, "EDA Toolkit 0.3.1  ·  使用指南")
         canvas.setStrokeColor(colors.HexColor("#D3E0E6"))
         canvas.setLineWidth(0.6)
         canvas.line(17 * mm, 12 * mm, page_w - 17 * mm, 12 * mm)
         canvas.setFillColor(colors.HexColor("#5B7180"))
         canvas.setFont("EDAChinese", 7.5)
-        canvas.drawString(17 * mm, 7.5 * mm, "工程开发版  ·  数据示例均为 SYNTHETIC_ONLY")
+        canvas.drawString(17 * mm, 7.5 * mm, "v0.3.1  ·  合成数据仅用于软件演示")
         canvas.drawRightString(page_w - 17 * mm, 7.5 * mm, f"{document.page}")
 
     doc = BaseDocTemplate(
@@ -615,7 +619,7 @@ def _build_pdf(captures: list[tuple[str, str]], fonts: dict[str, Path]) -> None:
         Spacer(1, 2 * mm),
         Table(
             [[Paragraph(
-                "版本 0.3.0　　文档日期 2026-10-27　　状态：工程开发版",
+                f"版本 0.3.1　　文档日期 {date.today().isoformat()}　　Windows 便携版",
                 ParagraphStyle("CoverBadge", parent=body, fontName="EDAChineseBold",
                                textColor=colors.white, fontSize=9, leading=13, spaceAfter=0),
             )]],
@@ -641,7 +645,7 @@ def _build_pdf(captures: list[tuple[str, str]], fonts: dict[str, Path]) -> None:
         Spacer(1, 6 * mm),
         Paragraph("开始前", heading),
         Paragraph(
-            "本地开发使用 Python 3.14.8 与项目 .venv。真实研究数据先确认单位、采样时钟、缺失和实验单位；再查看完整字段字典与验证限制。",
+            "Windows 便携包无需另装 Python。使用真实研究数据前，请确认单位、采样时钟、缺失情况和实验单位，并查阅字段字典与验证限制。",
             body,
         ),
         Spacer(1, 3 * mm),
@@ -658,7 +662,7 @@ def _build_pdf(captures: list[tuple[str, str]], fonts: dict[str, Path]) -> None:
                 "启动图形界面：",
                 "python -X utf8 -m eda_toolkit.ui.app",
                 "CLI 的 validate 读取并校验输入，plan 预览流程，run 调用共享 pipeline。GUI 首页的“单文件试跑”“批量启动”和“取消运行”也调用同一入口。结果目录保存配置快照、状态、来源和 manifest。",
-                "先用 examples/synthetic_demo/single.json 运行工程示例。所有示例信号、事件、条件、成员和同步锚点均为 SYNTHETIC_ONLY。新建空目录可用 demo 子命令生成另一份确定性示例。",
+                "先用 examples/current_synthetic_demo/single.json 运行工程示例。所有示例信号、事件、条件、成员和同步锚点均为 SYNTHETIC_ONLY。新建空目录可用 demo 子命令生成另一份确定性示例。",
             ],
         ),
         (
@@ -684,7 +688,7 @@ def _build_pdf(captures: list[tuple[str, str]], fonts: dict[str, Path]) -> None:
             [
                 "短缺口可选择线性或 PCHIP 插值，但需有效左右端点并满足最大跨度；首尾缺口不外推，长缺口切分连续段。插值事实保留，可从 primary feature policy 中排除。",
                 "Butterworth SOS 低通在每个连续合格段运行。检查正 fs、cutoff 小于 Nyquist、padding 与段长；前后向运行是离线零相位计算。程序报告估计边缘影响半径并传播 edge_affected。重采样采用分段 polyphase 抗混叠并传播支撑质量。",
-                "v0.3.0 新增 bateman_sparse 非负稀疏分解。选择 single_driver 预设启用 9 项 Driver 指标。Driver=脉冲质量/采样间隔，单位 µS/s；积分单位 µS。tonic、phasic 与 residual 重构 clean；优化失败的段保持缺失。该方法是本地研究模型，非 Ledalab/CDA 或 cvxEDA 复现。",
+                "v0.3.1 提供 bateman_sparse 非负稀疏分解。选择 single_driver 预设启用 9 项 Driver 指标。Driver=脉冲质量/采样间隔，单位 µS/s；积分单位 µS。tonic、phasic 与 residual 重构 clean；优化失败的段保持缺失。该方法是本地研究模型，非 Ledalab/CDA 或 cvxEDA 复现。",
                 "Driver 独立拟合连续合格段，排除插值、伪迹与预处理边缘，再从两端裁去完整核支持（默认 4 Hz 下约 16 秒）。短段和覆盖不足的窗口不可用。阈值默认 0.01 µS/s；支持边界删失脉冲不计数。事件积分不减基线，重叠窗口可能共享活动。完整数学定义及参数见 docs/driver-method.md。",
                 "filter_separation 用 SciPy Butterworth 二阶 SOS 对 clean_uS 分别作低通与高通，输出 tonic_uS 与 phasic_uS。residual_uS=clean_uS−tonic_uS−phasic_uS，driver=None。独立滤波分量不承诺精确重构。",
                 "该方法是本地独立实现，不是 NeuroKit、cvxEDA 或 Ledalab 兼容版。默认截止 0.05 Hz、二阶是研究示例，不是设备推荐参数。",
@@ -725,9 +729,9 @@ def _build_pdf(captures: list[tuple[str, str]], fonts: dict[str, Path]) -> None:
         (
             "运行证据与限制",
             [
-                "已有定向 IO/QC 和独立回归检查、开发机离屏 GUI 窗口，以及四条合成记录的端到端输出。已见输出包括 CSV、JSON、HTML、PNG、XLSX 和来源 manifest。具体命令、测试记录及工件见 docs/provenance.md 与 docs/验证与限制.md。",
-                "科学资格仍 pending_representative_real_data。缺少真实设备/任务意味着候选阈值、filter support、SCR 指标解释、同步交换性与模型假设没有充分验证。",
-                "cvxEDA、Ledalab、GPU 当前 disabled；不隐式换法。双 EXE 已有开发机限制外部 PATH 的实际验证，当前构建与测试快照以验证报告为准。真实设备/任务科学资格、对外发行许可结论和 clean Windows 资格仍未完成。",
+                "软件可导出 CSV、JSON、HTML、PNG、XLSX 等结果，并保存配置、输入摘要和运行 manifest。发布页提供当前发行包和工程验证说明；工程测试不替代真实研究数据验证。",
+                "目前缺少有代表性的真实设备/任务数据。候选阈值、filter support、SCR 指标解释、同步交换性与模型假设均未完成真实研究场景验证。",
+                "cvxEDA、Ledalab 和 GPU 路径当前不可用，软件不会自动换用其它算法。便携包的工程验证、真实设备/任务科学资格及分发许可审查是不同事项；成功运行不代表后两者已经通过。",
                 "软件不推断压力、情绪或疾病，不替代生理信号质量评估和统计设计。报告中的 succeeded 仅代表这次 software pipeline 正常返回。",
             ],
         ),

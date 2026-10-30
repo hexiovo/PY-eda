@@ -1,0 +1,131 @@
+{
+  "schema_version": "1.0",
+  "name": "input_manifest",
+  "display_name": "输入清单",
+  "description": "逐文件声明来源、身份、速率、单位和时钟。",
+  "fields": [
+    {
+      "name": "file_path",
+      "type": "string",
+      "unit": "none",
+      "required": true,
+      "missing": "forbidden",
+      "foreign_key": null,
+      "clock": null,
+      "description": ""
+    },
+    {
+      "name": "recording_id",
+      "type": "string",
+      "unit": "none",
+      "required": false,
+      "missing": "allowed",
+      "foreign_key": "signals.recording_id",
+      "clock": null,
+      "description": ""
+    },
+    {
+      "name": "subject_id",
+      "type": "string",
+      "unit": "none",
+      "required": false,
+      "missing": "allowed",
+      "foreign_key": "participants.subject_id",
+      "clock": null,
+      "description": ""
+    },
+    {
+      "name": "session_id",
+      "type": "string",
+      "unit": "none",
+      "required": false,
+      "missing": "allowed",
+      "foreign_key": null,
+      "clock": null,
+      "description": ""
+    },
+    {
+      "name": "sampling_rate_hz",
+      "type": "number",
+      "unit": "Hz",
+      "required": false,
+      "missing": "allowed",
+      "foreign_key": null,
+      "clock": null,
+      "description": ""
+    },
+    {
+      "name": "eda_unit",
+      "type": "string",
+      "unit": "none",
+      "required": false,
+      "missing": "allowed",
+      "foreign_key": null,
+      "clock": null,
+      "description": "uS、mS、S、ohm、kohm 或 Mohm。"
+    },
+    {
+      "name": "mapping_profile",
+      "type": "string",
+      "unit": "none",
+      "required": false,
+      "missing": "allowed",
+      "foreign_key": null,
+      "clock": null,
+      "description": "必须匹配调用方提供的映射；未知 profile 不会自动猜列。"
+    },
+    {
+      "name": "channel",
+      "type": "string",
+      "unit": "none",
+      "required": false,
+      "missing": "allowed",
+      "foreign_key": null,
+      "clock": null,
+      "description": ""
+    },
+    {
+      "name": "clock_domain",
+      "type": "string",
+      "unit": "none",
+      "required": false,
+      "missing": "allowed",
+      "foreign_key": null,
+      "clock": null,
+      "description": ""
+    },
+    {
+      "name": "time_origin",
+      "type": "string",
+      "unit": "none",
+      "required": false,
+      "missing": "allowed",
+      "foreign_key": null,
+      "clock": null,
+      "description": "与 time_unit 同单位的原始坐标原点。"
+    },
+    {
+      "name": "time_unit",
+      "type": "string",
+      "unit": "none",
+      "required": false,
+      "missing": "allowed",
+      "foreign_key": null,
+      "clock": null,
+      "description": "",
+      "allowed_values": [
+        "s",
+        "ms",
+        "us"
+      ]
+    }
+  ],
+  "unique": [
+    [
+      "file_path",
+      "recording_id",
+      "channel"
+    ]
+  ],
+  "example_label": "SYNTHETIC_ONLY"
+}
