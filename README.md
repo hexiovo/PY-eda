@@ -1,12 +1,12 @@
 # EDA Toolkit
 
-EDA Toolkit 是用于本地整理和分析皮肤电活动（EDA）数据的软件，涵盖数据导入与质量检查、预处理、特征提取、多人同步、统计分析和结果导出。当前发行版为 **v0.3.1**。
+EDA Toolkit 是用于本地整理和分析皮肤电活动（EDA）数据的软件，涵盖数据导入与质量检查、预处理、特征提取、多人同步、统计分析和结果导出。当前程序版本为 **v0.3.1**，最新分发版本为 **v0.3.1-r1**。
 
 软件运行完成只表示本次流程已执行；这本身不能证明设备适用、参数已校准或研究结论成立。开始分析前，请阅读[验证与限制](docs/验证与限制.md)。
 
 ## Windows 便携版
 
-在 [v0.3.1 发布页](https://github.com/hexiovo/PY-eda/releases/tag/v0.3.1)查看版本信息，或直接下载 [EDA_Toolkit-0.3.1-Windows-x64.zip](https://github.com/hexiovo/PY-eda/releases/download/v0.3.1/EDA_Toolkit-0.3.1-Windows-x64.zip)。下载后解压，在解压目录中双击 **eda_gui.exe** 打开图形界面；命令行入口是同目录的 **eda_cli.exe**。便携版不需要另装 Python、MATLAB 或 CUDA。
+在 [v0.3.1-r1 发布页](https://github.com/hexiovo/PY-eda/releases/tag/v0.3.1-r1)查看版本信息，或直接下载 [EDA_Toolkit-0.3.1-r1-Windows-x64.zip](https://github.com/hexiovo/PY-eda/releases/download/v0.3.1-r1/EDA_Toolkit-0.3.1-r1-Windows-x64.zip)。下载后解压，在解压目录中双击 **启动EDA工作台.cmd** 或 **eda_gui.exe** 打开图形界面；命令行入口是同目录的 **eda_cli.exe**。便携版不需要另装 Python、MATLAB 或 CUDA。
 
 请保留解压目录的完整结构，包括 **_internal**、**third_party**、**docs**、**assets**、**presets** 和 **skills**；不要单独移动 EXE。中文手册 **docs/EDA使用指南.pdf** 也可从软件的“帮助”菜单打开。
 
@@ -51,7 +51,7 @@ if ($LASTEXITCODE -ne 0) { throw '演示运行失败。' }
 
 ## 研究配置技能
 
-eda-study-config 技能可根据研究方案整理配置草案、参数记录、数据准备清单和操作卡。可直接下载[eda-study-config-0.3.1.zip](https://github.com/hexiovo/PY-eda/releases/download/v0.3.1/eda-study-config-0.3.1.zip)，其中含安装脚本和使用说明；技能边界见[技能说明](skills/README.md)。在源码目录运行 PowerShell 脚本 `skills/install_skill.ps1`；解压技能压缩包后，在该目录运行 `install_skill.ps1`。技能安装完成后开始新的 Codex 对话；若技能未显示，可重启 Codex 后再开新对话。
+eda-study-config 技能可根据研究方案整理配置草案、参数记录、数据准备清单和操作卡。可直接下载[eda-study-config-0.3.1.zip](https://github.com/hexiovo/PY-eda/releases/download/v0.3.1-r1/eda-study-config-0.3.1.zip)，其中含安装脚本和使用说明；技能边界见[技能说明](skills/README.md)。在源码目录运行 PowerShell 脚本 `skills/install_skill.ps1`；解压技能压缩包后，在该目录运行 `install_skill.ps1`。技能安装完成后开始新的 Codex 对话；若技能未显示，可重启 Codex 后再开新对话。
 
 该技能不安装 EDA Toolkit，也不会代替真实材料的校验。实际能力以当前运行环境的版本、功能、模板及检查结果为准。
 

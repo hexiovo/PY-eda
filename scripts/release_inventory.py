@@ -91,7 +91,7 @@ def _copy_release_metadata(bundle: Path, version: str, source_scope: str):
     _verify_prepared_build_info(version, source_scope)
     destination = bundle / 'third_party'
     shutil.copytree(PROJECT / 'third_party', destination, dirs_exist_ok=True)
-    for name in ('README.md', 'requirements.lock.txt', 'requirements.lock.sha256.txt'):
+    for name in ('README.md', 'requirements.lock.txt', 'requirements.lock.sha256.txt', '启动EDA工作台.cmd'):
         source = PROJECT / name
         if source.is_file():
             shutil.copy2(source, bundle / name)
