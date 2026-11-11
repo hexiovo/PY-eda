@@ -29,7 +29,9 @@ from PySide6.QtWidgets import (
 )
 
 
-EDA_ROOT = Path(r"D:\program\EDA")
+EDA_ROOT = Path(__file__).resolve().parent.parent
+if not (EDA_ROOT / "skills" / "eda-study-config" / "scripts" / "check_bundle.py").is_file():
+    EDA_ROOT = Path(r"D:\program\EDA")
 PYEDA_ROOT = Path(r"D:\data\PYEDA")
 
 
@@ -87,6 +89,8 @@ class MainWindow(QMainWindow):
         self.current_total = 1
         self.current_stage = ""
         self.analysis_eta = None
+        self.baseline_eta = None
+        self.baseline_eta_message = ""
         self.wrist_dir = PYEDA_ROOT / "手环数据"
         self.latest_directory: Path | None = None
         self.running = False
@@ -208,11 +212,26 @@ class MainWindow(QMainWindow):
         self.last_config = config
         self.last_status = ""
         self.analysis_eta = None
+        self.baseline_eta = None
+        self.baseline_eta_message = ""
         self.current_done = 0
         self.current_total = 1
         self.current_stage = ""
-        self._set_overall(0)
         self.log.clear()
+        try:
+            from pyeda_eta import estimate_total_seconds
+
+            estimate = estimate_total_seconds(PYEDA_ROOT / "study-config", self.wrist_dir,
+                                               PYEDA_ROOT / "_rawdata" / "_rawdata")
+            if estimate.get("status") == "estimated":
+                self.baseline_eta = float(estimate["seconds"])
+                self.baseline_eta_message = estimate["message"]
+                self.log.appendPlainText(
+                    f"预计总耗时约 {self._format_seconds(self.baseline_eta)}。{self.baseline_eta_message}。"
+                )
+        except Exception as error:
+            self.log.appendPlainText(f"未能生成运行前时间估计：{error}")
+        self._set_overall(0)
         self.running = True
         self.started_at = time.monotonic()
         self.restart_button.setEnabled(False)
@@ -275,6 +294,9 @@ class MainWindow(QMainWindow):
             if eta is not None:
                 scope = "当前记录批次估算" if self.last_config is None else "估算"
                 text = f"{self._format_seconds(eta)}（{scope}）"
+            elif self.baseline_eta is not None:
+                remaining = max(0.0, self.baseline_eta - elapsed)
+                text = f"约 {self._format_seconds(remaining)}（上次运行基数）"
             elif self.current_stage in ("analysis_export", "extended_export", "extended_statistics"):
                 text = "正在收尾"
             else:
@@ -292,8 +314,22 @@ class MainWindow(QMainWindow):
 
     @Slot(dict)
     def _on_completed(self, result: dict[str, Any]) -> None:
+        observed_elapsed = None
+        if self.started_at is not None:
+            observed_elapsed = max(0.0, time.monotonic() - self.started_at)
         self._set_run_directory(Path(result["run_directory"]))
         self.last_status = result["status"]
+        if (result.get("qualification") == "exploratory_response_posting_proxy"
+                and observed_elapsed is not None):
+            try:
+                from pyeda_eta import update_response_profile
+
+                update_response_profile(PYEDA_ROOT / "study-config", elapsed_s=observed_elapsed,
+                                        records=int(result.get("processed_records", 0) or 0),
+                                        windows=int(result.get("response_feature_windows", 0) or 0))
+                self.log.appendPlainText(f"已用本次实测耗时 {self._format_seconds(observed_elapsed)} 更新后续估时基数。")
+            except Exception as error:
+                self.log.appendPlainText(f"运行完成，但未更新估时基数：{error}")
         self.log.appendPlainText(f"输出目录：{self.latest_directory}")
         if self.last_status == "paused":
             self.stage_label.setText(f"已暂停，保存了 {result['records_saved']} 条记录。再次打开时自动继续。")
