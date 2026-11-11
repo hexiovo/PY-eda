@@ -1,0 +1,10 @@
+feature,family,definition,unit,minimum_blocks,minimum_continuous_seconds,missing_reason
+relative_mean,relative_signal,mean of relative signal,dimensionless,3,,
+relative_median,relative_signal,median of relative signal,dimensionless,3,,
+relative_sd,relative_signal,sample standard deviation,dimensionless,4,,
+tonic_mean,tonic,mean of tonic component,dimensionless,3,,
+tonic_slope_per_min,change_rate,OLS slope over elapsed minutes,dimensionless_per_minute,5,,
+phasic_rms,phasic,square root of mean squared phasic component,dimensionless,3,,
+peak_rate_per_min,peaks,peak count divided by eligible minutes,peaks_per_minute,8,,
+baseline_change,baseline_change,window value minus verified baseline value,dimensionless,3,,
+spectrum_low_band,spectrum,Welch integral over a predeclared low band,dimensionless_squared_per_hz,60,60,insufficient_continuous_exposure

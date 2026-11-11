@@ -1,0 +1,51 @@
+{
+  "study_id": "<study_id>",
+  "input": {
+    "design_file": "<absolute_design_file>",
+    "signal_directory": "<absolute_signal_directory>",
+    "outcome_directory": "<absolute_outcome_directory>",
+    "manifest": "<absolute_manifest>"
+  },
+  "device": {
+    "vendor": "<vendor>",
+    "model": "<model>",
+    "sampling_rate_hz": null,
+    "amplitude_unit": null,
+    "time_unit": null
+  },
+  "windows": {
+    "kind": "<whole|fixed|event|condition>",
+    "minimum_seconds": 60,
+    "minimum_coverage": 0.8,
+    "event_anchor": "<verified_event_anchor>"
+  },
+  "features": {
+    "families": [
+      "relative_signal",
+      "tonic",
+      "phasic",
+      "change_rate",
+      "peaks",
+      "baseline_change",
+      "spectrum"
+    ],
+    "minimum_blocks": 3,
+    "missing_policy": "retain_status_and_reason"
+  },
+  "statistics": {
+    "unit": "<independent_unit>",
+    "comparisons": ["descriptive", "group", "paired", "correlation", "regression"],
+    "cluster_variable": "<cluster_variable>",
+    "correction": "holm",
+    "alpha": 0.05
+  },
+  "compute": {
+    "requested_workers": 1,
+    "maximum_workers": 4,
+    "allow_gpu": false
+  },
+  "output": {
+    "directory": "<absolute_new_output_directory>",
+    "overwrite": false
+  }
+}
