@@ -322,7 +322,8 @@ class MainWindow(QMainWindow):
             observed_elapsed = max(0.0, time.monotonic() - self.started_at)
         self._set_run_directory(Path(result["run_directory"]))
         self.last_status = result["status"]
-        if (result.get("qualification") == "exploratory_response_posting_proxy"
+        if (result.get("status") == "succeeded"
+                and result.get("qualification") == "exploratory_response_posting_proxy"
                 and observed_elapsed is not None):
             try:
                 from pyeda_eta import update_response_profile
