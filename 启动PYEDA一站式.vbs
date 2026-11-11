@@ -1,9 +1,17 @@
 Option Explicit
 
-Dim fso, shell, root, pythonw, gui
+Dim fso, shell, root, app, pythonw, gui
 Set fso = CreateObject("Scripting.FileSystemObject")
 Set shell = CreateObject("WScript.Shell")
 root = fso.GetParentFolderName(WScript.ScriptFullName)
+
+app = fso.BuildPath(root, "PYEDA_一站式分析.exe")
+If Not fso.FileExists(app) Then app = fso.BuildPath(root, "dist\PYEDA_一站式分析.exe")
+If fso.FileExists(app) Then
+    shell.CurrentDirectory = root
+    shell.Run """" & app & """", 0, False
+    WScript.Quit 0
+End If
 
 pythonw = fso.BuildPath(root, ".venv\Scripts\pythonw.exe")
 gui = fso.BuildPath(root, "scripts\pyeda_gui.py")

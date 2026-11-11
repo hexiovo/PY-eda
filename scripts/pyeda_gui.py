@@ -29,7 +29,10 @@ from PySide6.QtWidgets import (
 )
 
 
-EDA_ROOT = Path(__file__).resolve().parent.parent
+if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+    EDA_ROOT = Path(sys._MEIPASS)
+else:
+    EDA_ROOT = Path(__file__).resolve().parent.parent
 if not (EDA_ROOT / "skills" / "eda-study-config" / "scripts" / "check_bundle.py").is_file():
     EDA_ROOT = Path(r"D:\program\EDA")
 PYEDA_ROOT = Path(r"D:\data\PYEDA")
